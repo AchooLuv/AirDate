@@ -8,7 +8,12 @@ import { ReleaseCard } from "@/components/release-card";
 import { Sidebar } from "@/components/sidebar";
 import { CATEGORY_META, CATEGORY_ORDER } from "@/lib/categories";
 import { TIMELINE_GROUPS } from "@/lib/constants";
-import { formatDateCN, formatMonthDay, weekdayCN } from "@/lib/date";
+import {
+  datePath,
+  formatDateCN,
+  formatMonthDay,
+  weekdayCN,
+} from "@/lib/date";
 import type { Category, DayData, ReleaseItem } from "@/lib/types";
 
 type Filter = Category | "all";
@@ -167,6 +172,7 @@ export function ScheduleExplorer({
 
         <Sidebar
           data={data}
+          today={today}
           active={filter}
           onSelect={(category) =>
             setFilter((current) => (current === category ? "all" : category))
@@ -215,7 +221,7 @@ function EmptyState({
       </p>
 
       {nextItem ? (
-        <Link href={`/?date=${nextItem.date}`} className="empty-next">
+        <Link href={datePath(nextItem.date, today)} className="empty-next">
           <span className="empty-next-date">{formatMonthDay(nextItem.date)}</span>
           <span className="empty-next-copy">
             <small>最近一场{meta ? meta.label : ""}</small>
@@ -232,7 +238,7 @@ function EmptyState({
             清除筛选
           </button>
         ) : (
-          <Link href={`/?date=${today}`} className="empty-secondary">
+          <Link href="/" className="empty-secondary">
             回到今天
           </Link>
         )}

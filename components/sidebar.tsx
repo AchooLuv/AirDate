@@ -3,17 +3,19 @@ import Link from "next/link";
 import { Activity, ArrowUpRight, CalendarClock, Database, Radio } from "lucide-react";
 import { CoverImage } from "@/components/cover-image";
 import { CATEGORY_META, CATEGORY_ORDER } from "@/lib/categories";
-import { formatMonthDay, relativeDayLabel } from "@/lib/date";
+import { datePath, formatMonthDay, relativeDayLabel } from "@/lib/date";
 import type { Category, DayData } from "@/lib/types";
 
 type Filter = Category | "all";
 
 export function Sidebar({
   data,
+  today,
   active,
   onSelect,
 }: {
   data: DayData;
+  today: string;
   active: Filter;
   onSelect: (category: Category) => void;
 }) {
@@ -87,7 +89,7 @@ export function Sidebar({
 
       {next ? (
         <Link
-          href={`/?date=${next.date}`}
+          href={datePath(next.date, today)}
           className="rail-card next-card"
           style={
             {

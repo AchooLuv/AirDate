@@ -13,6 +13,7 @@ import {
   addDays,
   formatMonthCN,
   formatDateCN,
+  datePath,
   relativeDayLabel,
   weekdayCN,
 } from "@/lib/date";
@@ -56,7 +57,7 @@ export function Hero({
         <div className="hero-date-row">
           <div className="date-control">
             <Link
-              href={`/?date=${previous}`}
+              href={datePath(previous, today)}
               className="date-arrow"
               aria-label={`查看 ${previous}`}
             >
@@ -68,7 +69,7 @@ export function Hero({
               <span className="date-weekday">{weekdayCN(date)}</span>
             </div>
             <Link
-              href={`/?date=${next}`}
+              href={datePath(next, today)}
               className="date-arrow"
               aria-label={`查看 ${next}`}
             >
@@ -77,7 +78,7 @@ export function Hero({
           </div>
 
           {!isToday ? (
-            <Link href={`/?date=${today}`} className="today-link">
+            <Link href="/" className="today-link">
               <RotateCcw size={13} />
               回到今天
             </Link>

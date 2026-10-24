@@ -16,7 +16,7 @@
 [![React](https://img.shields.io/badge/React-19.3-149ECA?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com/)
-[![SSR](https://img.shields.io/badge/Rendering-SSR-5DE2A5)](#架构)
+[![SSR](https://img.shields.io/badge/Rendering-SSR%20%2B%20ISR-5DE2A5)](#架构)
 [![License](https://img.shields.io/badge/License-MIT-F7B955)](./LICENSE)
 [![Data](https://img.shields.io/badge/Anime%20data-CC%20BY%204.0-D28CFF)](./data/README.md)
 
@@ -47,7 +47,7 @@
 
 - 默认显示**今天**（`Asia/Shanghai`，UTC+8），服务端渲染首屏，不依赖客户端二次请求。
 - 一周日期条支持切换周、回到今天、跳到 7 天后；日期会写入 URL，可直接分享：
-  - `/?date=2026-10-24`
+  - `/date/2026-10-24`
 - 时间线按 **全天 / 深夜 / 上午 / 下午 / 晚间** 分组，左侧时间轴显示北京时间。
 - 顶部展示今日总量、四个分类的数量和下一场预告。
 
@@ -112,7 +112,7 @@
 ```text
                          ┌──────────────────────────────┐
                          │        Vercel / CDN          │
-                         │  Next.js 16 App Router (SSR) │
+                         │ Next.js 16 App Router SSR/ISR│
                          └──────────────┬───────────────┘
                                         │
                      ┌──────────────────▼──────────────────┐
@@ -151,7 +151,7 @@
 
 | 设计 | 做法 |
 | --- | --- |
-| SSR | `app/page.tsx` 使用 `force-dynamic`，首屏数据由服务端 `getDayData()` 直接产出 |
+| SSR + ISR | `/` 预渲染并每 5 分钟 revalidate；`/date/[date]` 按需生成并缓存；首屏始终是服务端 HTML |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
 | 缓存 | 聚合日结果 + 各 provider 成功结果写入 Next Data Cache；降级空结果不缓存；内存 + 可选 Upstash + CDN `s-maxage` |
@@ -209,7 +209,8 @@
 ```text
 AirDate/
 ├── app/
-│   ├── page.tsx                 # SSR 首页：解析 date，取数，注入 SEO JSON-LD
+│   ├── page.tsx                 # 今日首页：SSR + ISR
+│   ├── date/[date]/page.tsx     # 日期页：按需生成 + ISR
 │   ├── layout.tsx               # 字体、metadata、viewport
 │   ├── globals.css              # 设计系统、四套分类主题、响应式
 │   ├── loading.tsx              # 首屏加载态
@@ -419,7 +420,7 @@ AirDate 的 SEO 不是只靠 README：
 - 服务端渲染，日期和内容直接出现在首屏 HTML。
 - 动态 `generateMetadata`：切换日期时 title / description / canonical 跟随变化。
 - `WebSite` JSON-LD + `SearchAction`。
-- `robots.txt`、`sitemap.xml`（包含未来 15 天日期页）。
+- `robots.txt`、`sitemap.xml`（首页 + 未来 14 天日期页）。
 - `opengraph-image`（1200×630）与 `twitter:card`。
 - 语义化中文标题、aria 标签、可分享 URL。
 

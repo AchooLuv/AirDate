@@ -162,6 +162,11 @@ export function shiftWeek(key: string, direction: -1 | 1): string {
   return addDays(key, direction * 7);
 }
 
+/** Today lives at `/`; every other date has a stable, cacheable path. */
+export function datePath(key: string, today: string): string {
+  return key === today ? "/" : `/date/${key}`;
+}
+
 export function isWeekend(key: string): boolean {
   const day = weekdayIndex(key);
   return day === 0 || day === 6;
