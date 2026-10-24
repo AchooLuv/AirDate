@@ -10,6 +10,7 @@
 
 默认展示今天，以北京时间把每一条值得期待的放送、上映和发售排成时间线。
 
+[![CI](https://github.com/AchooLuv/AirDate/actions/workflows/ci.yml/badge.svg)](https://github.com/AchooLuv/AirDate/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.3-149ECA?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
