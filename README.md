@@ -154,7 +154,7 @@
 | SSR | `app/page.tsx` 使用 `force-dynamic`，首屏数据由服务端 `getDayData()` 直接产出 |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
-| 缓存 | 各 provider 成功结果写入 Next Data Cache；失败不缓存；内存 + 可选 Upstash + CDN `s-maxage` |
+| 缓存 | 聚合日结果 + 各 provider 成功结果写入 Next Data Cache；降级空结果不缓存；内存 + 可选 Upstash + CDN `s-maxage` |
 | 定时任务 | Vercel Cron 每天调用 `/api/cron/refresh`，预热今天起 4 天的数据 |
 | 图片代理 | 白名单域名 + 来源 Referer + 7 天 CDN 缓存，解决豆瓣图片防盗链 |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
@@ -344,7 +344,7 @@ npm run start
 | --- | --- |
 | 进程内 L1 | 番剧 30 分钟；豆瓣 3 小时；Steam 2 小时；TVMaze 1 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| Next Data Cache | 各 provider 成功结果单独缓存；失败结果不写入，避免把空页面缓存 5 分钟；搜索 30 分钟 |
+| Next Data Cache | 日聚合 5 分钟 + 各 provider 成功结果单独缓存；降级空结果不写入；搜索 30 分钟 |
 | CDN | `/api/schedule` `s-maxage=900`；`/api/search` `s-maxage=600`；图片 7 天 |
 | 失败降级 | 过期 6 小时内的 L1 数据可在上游失败时继续返回 |
 
