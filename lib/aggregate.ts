@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { getAnimeForDay } from "@/lib/providers/anilist";
 import { getDoubanMovies, getDoubanSeries } from "@/lib/providers/douban";
@@ -147,7 +148,7 @@ function statusFor(
   };
 }
 
-export async function getDayData(dateKey: string): Promise<DayData> {
+async function loadDayData(dateKey: string): Promise<DayData> {
   return withCache(`day:v10:${dateKey}`, 300, async () => {
     const timings = {
       douban: Date.now(),
@@ -220,6 +221,20 @@ export async function getDayData(dateKey: string): Promise<DayData> {
       sources: sourceStatuses,
     };
   });
+}
+
+/**
+ * Persist the fully aggregated day in the Next.js Data Cache. Serverless
+ * instances do not share module memory, so this is what keeps a warm page fast
+ * even without an external Redis instance.
+ */
+const getCachedDayData = unstable_cache(loadDayData, ["airdate-day-v1"], {
+  revalidate: 300,
+  tags: ["schedule"],
+});
+
+export async function getDayData(dateKey: string): Promise<DayData> {
+  return getCachedDayData(dateKey);
 }
 
 export function emptyDayData(dateKey: string): DayData {

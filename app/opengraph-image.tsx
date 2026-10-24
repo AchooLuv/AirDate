@@ -120,7 +120,7 @@ export default function OpenGraphImage() {
               color: "#686e82",
             }}
           >
-            AIRDATE.VERCEL.APP
+            MURI.LIFE
           </span>
         </div>
       </div>

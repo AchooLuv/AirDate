@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { findAnimeByTitle } from "@/lib/anime-index";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE, SEARCH_LIMIT, SEARCH_MIN_LENGTH } from "@/lib/constants";
@@ -66,7 +67,7 @@ function relevance(item: SearchResult, query: string): number {
   return score;
 }
 
-export async function searchAll(rawQuery: string): Promise<SearchResult[]> {
+async function loadSearch(rawQuery: string): Promise<SearchResult[]> {
   const query = rawQuery.trim().slice(0, 80);
   if (query.length < SEARCH_MIN_LENGTH) return [];
 
@@ -107,4 +108,15 @@ export async function searchAll(rawQuery: string): Promise<SearchResult[]> {
         sourceLabel: item.source.name,
       }));
   });
+}
+
+const getCachedSearch = unstable_cache(loadSearch, ["airdate-search-v1"], {
+  revalidate: REVALIDATE.search,
+  tags: ["search"],
+});
+
+export async function searchAll(query: string): Promise<SearchResult[]> {
+  const trimmed = query.trim().slice(0, 80);
+  if (trimmed.length < SEARCH_MIN_LENGTH) return [];
+  return getCachedSearch(trimmed);
 }

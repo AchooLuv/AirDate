@@ -10,6 +10,7 @@
 
 默认展示今天，以北京时间把每一条值得期待的放送、上映和发售排成时间线。
 
+[![Live](https://img.shields.io/badge/Live-muri.life-5DE2A5?logo=vercel&logoColor=white)](https://muri.life)
 [![CI](https://github.com/AchooLuv/AirDate/actions/workflows/ci.yml/badge.svg)](https://github.com/AchooLuv/AirDate/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.4-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19.3-149ECA?logo=react&logoColor=white)](https://react.dev/)
@@ -36,7 +37,7 @@
 
 它不是一个“资讯流”，而是一张**按天组织的时间线**。你可以默认停在今天，也可以点开一周日历去看下周，再通过分类和全站搜索找到想追的作品。
 
-线上演示地址取决于你的 Vercel 部署；本地运行后访问 <http://localhost:3000>。
+线上地址：<https://muri.life> · 本地运行后访问 <http://localhost:3000>。
 
 ---
 
@@ -142,7 +143,7 @@
 缓存分层：
   L1 进程内 Map（同实例热请求）
   L2 Upstash Redis（可选，跨实例）
-  L3 Next.js Data Cache / fetch revalidate
+  L3 Next.js Data Cache（整天聚合 + fetch revalidate）
   L4 Vercel CDN Cache-Control（API 响应）
 ```
 
@@ -153,7 +154,7 @@
 | SSR | `app/page.tsx` 使用 `force-dynamic`，首屏数据由服务端 `getDayData()` 直接产出 |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
-| 缓存 | 内存 + 可选 Upstash + Next Data Cache + CDN `s-maxage` |
+| 缓存 | 整天聚合结果写入 Next Data Cache；内存 + 可选 Upstash + CDN `s-maxage` |
 | 定时任务 | Vercel Cron 每天调用 `/api/cron/refresh`，预热今天起 4 天的数据 |
 | 图片代理 | 白名单域名 + 来源 Referer + 7 天 CDN 缓存，解决豆瓣图片防盗链 |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
@@ -265,7 +266,7 @@ cp .env.example .env.local
 
 | 变量 | 必填 | 用途 |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | 否 | 生产域名，用于 canonical / sitemap / OG；默认 `https://airdate.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | 否 | 生产域名，用于 canonical / sitemap / OG；默认 `https://muri.life` |
 | `CRON_SECRET` | 否 | 保护 `/api/cron/refresh`；Vercel Cron 会自动带 `Authorization: Bearer` |
 | `UPSTASH_REDIS_REST_URL` | 否 | Upstash Redis REST URL，启用跨实例缓存 |
 | `UPSTASH_REDIS_REST_TOKEN` | 否 | Upstash Redis REST Token |
@@ -343,7 +344,7 @@ npm run start
 | --- | --- |
 | 进程内 L1 | 首页聚合 5 分钟；番剧 30 分钟；豆瓣 3 小时；Steam 2 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| Next Data Cache | 每个上游 `fetch` 单独 `revalidate` |
+| Next Data Cache | 整天聚合结果缓存 5 分钟；每个上游 `fetch` 单独 `revalidate` |
 | CDN | `/api/schedule` `s-maxage=900`；`/api/search` `s-maxage=600`；图片 7 天 |
 | 失败降级 | 过期 6 小时内的 L1 数据可在上游失败时继续返回 |
 

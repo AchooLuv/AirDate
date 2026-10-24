@@ -125,7 +125,7 @@ async function appDetail(appId: number): Promise<SteamAppDetails["data"] | null>
         headers: STEAM_HEADERS,
         revalidate: REVALIDATE.steamDetails,
         tags: ["schedule", "steam"],
-        timeoutMs: 8_000,
+        timeoutMs: 5_000,
       },
     );
     const entry = payload[String(appId)];
@@ -200,7 +200,7 @@ export async function getSteamGames(): Promise<ReleaseItem[]> {
         headers: STEAM_HEADERS,
         revalidate: REVALIDATE.steam,
         tags: ["schedule", "steam"],
-        timeoutMs: 9_000,
+        timeoutMs: 7_000,
       },
     );
 
@@ -216,7 +216,7 @@ export async function getSteamGames(): Promise<ReleaseItem[]> {
       return true;
     });
 
-    const details = await mapLimit(unique.slice(0, 20), 4, async (item) => {
+    const details = await mapLimit(unique.slice(0, 20), 8, async (item) => {
       try {
         return { id: item.id, data: await appDetail(item.id) };
       } catch {

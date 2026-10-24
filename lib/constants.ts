@@ -3,7 +3,7 @@ export const SITE_TAGLINE = "电影、剧集、番剧与游戏的上映 / 放送
 export const SITE_DESCRIPTION =
   "AirDate 聚合电影定档、剧集更新、番剧放送与游戏发售信息，以北京时间时间线和日历展示。每天打开，就知道今天有什么值得看、值得玩。";
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://airdate.vercel.app";
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "https://muri.life";
 export const GITHUB_URL = "https://github.com/AchooLuv/AirDate";
 export const SOURCE_CONTACT =
   process.env.SOURCE_CONTACT || "https://github.com/AchooLuv/AirDate";
