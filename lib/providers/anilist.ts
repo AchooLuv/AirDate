@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import {
   findAnimeById,
   findAnimeByTitle,
@@ -185,7 +186,7 @@ function mediaSummary(media: AniListMedia): string {
   return truncateText(stripHtml(media.description), 420);
 }
 
-export async function getAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
+async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
   return withCache(`anilist:day:v6:${dateKey}`, REVALIDATE.anime, async () => {
     const { from, to } = dayUnixRange(dateKey);
     const schedules: AniSchedule[] = [];
@@ -245,6 +246,16 @@ export async function getAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
 
     return items.sort((a, b) => (a.startsAt ?? "").localeCompare(b.startsAt ?? ""));
   });
+}
+
+const getCachedAnimeForDay = unstable_cache(
+  loadAnimeForDay,
+  ["anilist-day-v1"],
+  { revalidate: REVALIDATE.anime, tags: ["schedule", "anilist"] },
+);
+
+export async function getAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
+  return getCachedAnimeForDay(dateKey);
 }
 
 function startDateKey(media: AniListMedia): string | undefined {

@@ -1,5 +1,3 @@
-import { unstable_cache } from "next/cache";
-import { withCache } from "@/lib/cache";
 import { getAnimeForDay } from "@/lib/providers/anilist";
 import { getDoubanMovies, getDoubanSeries } from "@/lib/providers/douban";
 import { getSteamGames } from "@/lib/providers/steam";
@@ -149,92 +147,80 @@ function statusFor(
 }
 
 async function loadDayData(dateKey: string): Promise<DayData> {
-  return withCache(`day:v10:${dateKey}`, 300, async () => {
-    const timings = {
-      douban: Date.now(),
-      tvmaze: Date.now(),
-      anime: Date.now(),
-      steam: Date.now(),
-    };
+  const timings = {
+    douban: Date.now(),
+    tvmaze: Date.now(),
+    anime: Date.now(),
+    steam: Date.now(),
+  };
 
-    const [doubanMovies, doubanSeries, tvmaze, anime, games] = await Promise.allSettled([
-      getDoubanMovies(),
-      getDoubanSeries(),
-      getTvmazeEpisodes(dateKey),
-      getAnimeForDay(dateKey),
-      getSteamGames(),
-    ]);
+  const [doubanMovies, doubanSeries, tvmaze, anime, games] = await Promise.allSettled([
+    getDoubanMovies(),
+    getDoubanSeries(),
+    getTvmazeEpisodes(dateKey),
+    getAnimeForDay(dateKey),
+    getSteamGames(),
+  ]);
 
-    const movies = doubanMovies.status === "fulfilled" ? doubanMovies.value : [];
-    const series =
-      doubanSeries.status === "fulfilled"
-        ? doubanSeries.value.filter((item) => item.category === "series")
-        : [];
-    const doubanAnime =
-      doubanSeries.status === "fulfilled"
-        ? doubanSeries.value.filter((item) => item.category === "anime")
-        : [];
-    const episodes = tvmaze.status === "fulfilled" ? tvmaze.value : [];
-    const animeItems = anime.status === "fulfilled" ? anime.value : [];
-    const gameItems = games.status === "fulfilled" ? games.value : [];
+  const movies = doubanMovies.status === "fulfilled" ? doubanMovies.value : [];
+  const series =
+    doubanSeries.status === "fulfilled"
+      ? doubanSeries.value.filter((item) => item.category === "series")
+      : [];
+  const doubanAnime =
+    doubanSeries.status === "fulfilled"
+      ? doubanSeries.value.filter((item) => item.category === "anime")
+      : [];
+  const episodes = tvmaze.status === "fulfilled" ? tvmaze.value : [];
+  const animeItems = anime.status === "fulfilled" ? anime.value : [];
+  const gameItems = games.status === "fulfilled" ? games.value : [];
 
-    const allKnown = dedupe([
-      ...movies,
-      ...series,
-      ...episodes,
-      ...animeItems,
-      ...doubanAnime,
-      ...gameItems,
-    ]);
+  const allKnown = dedupe([
+    ...movies,
+    ...series,
+    ...episodes,
+    ...animeItems,
+    ...doubanAnime,
+    ...gameItems,
+  ]);
 
-    const items = sortItems(allKnown.filter((item) => item.date === dateKey));
-    const upcoming = pickUpcoming(allKnown, dateKey);
-    const counts = makeCounts(items);
+  const items = sortItems(allKnown.filter((item) => item.date === dateKey));
+  const upcoming = pickUpcoming(allKnown, dateKey);
+  const counts = makeCounts(items);
 
-    const doubanSettled: Settled<ReleaseItem[]> =
-      doubanMovies.status === "fulfilled" || doubanSeries.status === "fulfilled"
-        ? {
-            status: "fulfilled",
-            value: [...movies, ...series, ...doubanAnime],
-          }
-        : {
-            status: "rejected",
-            reason:
-              doubanMovies.status === "rejected" ? doubanMovies.reason : doubanSeries.reason,
-          };
+  const doubanSettled: Settled<ReleaseItem[]> =
+    doubanMovies.status === "fulfilled" || doubanSeries.status === "fulfilled"
+      ? {
+          status: "fulfilled",
+          value: [...movies, ...series, ...doubanAnime],
+        }
+      : {
+          status: "rejected",
+          reason:
+            doubanMovies.status === "rejected" ? doubanMovies.reason : doubanSeries.reason,
+        };
 
-    const sourceStatuses: SourceStatus[] = [
-      statusFor("豆瓣", doubanSettled, items, timings.douban, "电影 · 剧集 · 番剧首播"),
-      statusFor("TVMaze", tvmaze, items, timings.tvmaze, "北美电视网与流媒体"),
-      statusFor("AniList", anime, items, timings.anime, "AniList 放送表 · Bangumi 中文索引"),
-      statusFor("Steam", games, items, timings.steam, "国区即将发售与新作"),
-    ];
+  const sourceStatuses: SourceStatus[] = [
+    statusFor("豆瓣", doubanSettled, items, timings.douban, "电影 · 剧集 · 番剧首播"),
+    statusFor("TVMaze", tvmaze, items, timings.tvmaze, "北美电视网与流媒体"),
+    statusFor("AniList", anime, items, timings.anime, "AniList 放送表 · Bangumi 中文索引"),
+    statusFor("Steam", games, items, timings.steam, "国区即将发售与新作"),
+  ];
 
-    return {
-      date: dateKey,
-      timezone: "Asia/Shanghai",
-      generatedAt: new Date().toISOString(),
-      counts,
-      total: items.length,
-      items,
-      upcoming,
-      sources: sourceStatuses,
-    };
-  });
+  return {
+    date: dateKey,
+    timezone: "Asia/Shanghai",
+    generatedAt: new Date().toISOString(),
+    counts,
+    total: items.length,
+    items,
+    upcoming,
+    sources: sourceStatuses,
+  };
 }
 
-/**
- * Persist the fully aggregated day in the Next.js Data Cache. Serverless
- * instances do not share module memory, so this is what keeps a warm page fast
- * even without an external Redis instance.
- */
-const getCachedDayData = unstable_cache(loadDayData, ["airdate-day-v1"], {
-  revalidate: 300,
-  tags: ["schedule"],
-});
-
 export async function getDayData(dateKey: string): Promise<DayData> {
-  return getCachedDayData(dateKey);
+  return loadDayData(dateKey);
 }
 
 export function emptyDayData(dateKey: string): DayData {

@@ -10,8 +10,8 @@
   --line-strong: rgba(255, 255, 255, 0.14);
   --text: #f5f6fa;
   --text-soft: #c4c8d6;
-  --muted: #8f95a8;
-  --muted-2: #686e82;
+  --muted: #9ba2b5;
+  --muted-2: #7f879b;
   --movie: #f7b955;
   --series: #5ab6ff;
   --anime: #d28cff;
@@ -2347,6 +2347,121 @@ button {
   color: var(--muted-2);
 }
 
+/* ------------------------------------------------------------------- friends */
+
+.friend-strip {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  padding: 26px 0 24px;
+  border-top: 1px solid var(--line);
+}
+
+.friend-heading {
+  display: flex;
+  flex: 0 0 220px;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 28px;
+  border-right: 1px solid var(--line);
+}
+
+.friend-heading strong {
+  font-size: 15px;
+  font-weight: 540;
+  letter-spacing: -0.025em;
+  color: var(--text-soft);
+}
+
+.friend-heading p {
+  margin: 0;
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--muted-2);
+}
+
+.friend-grid {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.friend-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 12px 13px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.014));
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease;
+}
+
+.friend-card:hover {
+  background:
+    radial-gradient(circle at 84% 16%, rgba(210, 140, 255, 0.1), transparent 46%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.018));
+  border-color: rgba(210, 140, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+.friend-index {
+  font-family: var(--font-code);
+  font-size: 9px;
+  color: var(--muted-2);
+}
+
+.friend-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.friend-copy strong {
+  font-size: 12px;
+  font-weight: 520;
+  color: var(--text-soft);
+}
+
+.friend-copy small {
+  overflow: hidden;
+  font-family: var(--font-code);
+  font-size: 8.5px;
+  color: var(--muted-2);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-copy em {
+  overflow: hidden;
+  font-size: 9px;
+  font-style: normal;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friend-arrow {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+  transition:
+    color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.friend-card:hover .friend-arrow {
+  color: var(--anime);
+  transform: translate(1px, -1px);
+}
+
 .footer-bottom {
   display: flex;
   align-items: center;
@@ -3427,6 +3542,451 @@ button {
 
   .search-footer span:last-child {
     display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .friend-strip {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .friend-heading {
+    flex: none;
+    padding-right: 0;
+    padding-bottom: 14px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  .friend-strip {
+    padding: 22px 0 20px;
+  }
+
+  .friend-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .friend-card {
+    padding: 11px 12px;
+  }
+}
+
+/* --------------------------------------------------- desktop readability pass */
+
+/*
+ * The layout was originally tuned on a phone, which left captions and metadata
+ * unusually small on desktop. These overrides only touch pointer/desktop
+ * viewports, preserving the compact mobile layout.
+ */
+@media (min-width: 900px) {
+  .brand-text span {
+    font-size: 8.5px;
+    letter-spacing: 0.18em;
+  }
+
+  .nav-link {
+    font-size: 13.5px;
+  }
+
+  .search-trigger {
+    font-size: 12.5px;
+  }
+
+  .search-trigger-label {
+    min-width: 66px;
+  }
+
+  .search-kbd {
+    font-size: 10px;
+  }
+
+  .eyebrow {
+    font-size: 10.5px;
+  }
+
+  .hero-lede {
+    font-size: 15.5px;
+    line-height: 1.85;
+  }
+
+  .date-main {
+    font-size: 14px;
+  }
+
+  .date-weekday {
+    font-size: 11.5px;
+  }
+
+  .today-link,
+  .today-hint {
+    font-size: 11.5px;
+  }
+
+  .hero-stat-total > span {
+    font-size: 12px;
+  }
+
+  .hero-stat-total small {
+    font-size: 9px;
+  }
+
+  .hero-category {
+    font-size: 12px;
+  }
+
+  .hero-category strong {
+    font-size: 11px;
+  }
+
+  .hero-primary-link,
+  .hero-secondary-link {
+    font-size: 12.5px;
+  }
+
+  .poster-category {
+    font-size: 8.5px;
+  }
+
+  .poster-info strong {
+    font-size: 13.5px;
+  }
+
+  .poster-live,
+  .poster-counter span {
+    font-size: 8px;
+  }
+
+  .week-meta strong {
+    font-size: 13.5px;
+  }
+
+  .week-meta > span:last-child {
+    font-size: 10px;
+  }
+
+  .week-day-label {
+    font-size: 10px;
+  }
+
+  .week-day-number {
+    font-size: 20px;
+  }
+
+  .week-day-month {
+    font-size: 8.5px;
+  }
+
+  .week-today,
+  .week-quick-next {
+    font-size: 10px;
+  }
+
+  .category-tab {
+    height: 37px;
+    padding: 0 13px;
+    font-size: 12.5px;
+  }
+
+  .category-tab-count {
+    font-size: 9.5px;
+  }
+
+  .toolbar-search {
+    font-size: 11.5px;
+  }
+
+  .toolbar-search kbd,
+  .toolbar-timezone {
+    font-size: 9px;
+  }
+
+  .mono-label,
+  .section-kicker,
+  .rail-kicker {
+    font-size: 10.5px;
+  }
+
+  .section-meta span {
+    font-size: 11.5px;
+  }
+
+  .section-meta strong {
+    font-size: 10.5px;
+  }
+
+  .explorer-layout {
+    grid-template-columns: minmax(0, 1fr) 330px;
+  }
+
+  .group-title strong {
+    font-size: 12.5px;
+  }
+
+  .group-hint {
+    font-size: 8.5px;
+  }
+
+  .group-count {
+    min-width: 20px;
+    height: 20px;
+    font-size: 9.5px;
+  }
+
+  .release-time {
+    font-size: 11.5px;
+  }
+
+  .category-badge {
+    font-size: 8.5px;
+  }
+
+  .release-badge {
+    font-size: 10.5px;
+  }
+
+  .release-episode {
+    font-size: 9.5px;
+  }
+
+  .release-source-inline {
+    font-size: 8.5px;
+  }
+
+  .release-title {
+    font-size: 18.5px;
+  }
+
+  .release-original {
+    font-size: 9.5px;
+  }
+
+  .release-summary {
+    font-size: 13px;
+    line-height: 1.65;
+    color: #a9afc2;
+  }
+
+  .meta-chip {
+    padding: 4px 7px;
+    font-size: 10.5px;
+  }
+
+  .release-cover-category {
+    font-size: 7.5px;
+  }
+
+  .release-action span {
+    font-size: 9.5px;
+  }
+
+  .signal-total > strong {
+    font-size: 52px;
+  }
+
+  .signal-total span {
+    font-size: 12px;
+  }
+
+  .signal-total small {
+    font-size: 9px;
+  }
+
+  .signal-label {
+    font-size: 11.5px;
+  }
+
+  .signal-row > strong {
+    font-size: 10px;
+  }
+
+  .signal-foot {
+    font-size: 9.5px;
+  }
+
+  .live-pill {
+    font-size: 8px;
+  }
+
+  .next-relative,
+  .next-date {
+    font-size: 9px;
+  }
+
+  .next-copy strong {
+    font-size: 13.5px;
+  }
+
+  .next-meta {
+    font-size: 9.5px;
+  }
+
+  .next-summary {
+    font-size: 10.5px;
+  }
+
+  .source-count {
+    font-size: 8.5px;
+  }
+
+  .source-name {
+    font-size: 11px;
+  }
+
+  .source-name small {
+    font-size: 9px;
+  }
+
+  .source-row > strong {
+    font-size: 9.5px;
+  }
+
+  .rail-note span {
+    font-size: 8px;
+  }
+
+  .rail-note strong {
+    font-size: 10px;
+  }
+
+  .rail-note p {
+    font-size: 9.5px;
+  }
+
+  .upcoming-category,
+  .upcoming-relative {
+    font-size: 8.5px;
+  }
+
+  .upcoming-card h3 {
+    font-size: 14.5px;
+  }
+
+  .upcoming-date strong {
+    font-size: 16px;
+  }
+
+  .upcoming-date span {
+    font-size: 9px;
+  }
+
+  .upcoming-card p {
+    font-size: 10px;
+  }
+
+  .empty-state > p {
+    font-size: 13px;
+  }
+
+  .empty-next-copy small {
+    font-size: 9px;
+  }
+
+  .empty-next-copy strong {
+    font-size: 12.5px;
+  }
+
+  .empty-primary,
+  .empty-secondary {
+    font-size: 11.5px;
+  }
+
+  .footer-brand p {
+    font-size: 12px;
+  }
+
+  .footer-stamp {
+    font-size: 8px;
+  }
+
+  .footer-links a {
+    font-size: 11.5px;
+  }
+
+  .footer-github-link strong {
+    font-size: 11px;
+  }
+
+  .footer-github-link small {
+    font-size: 8.5px;
+  }
+
+  .footer-github p {
+    font-size: 9.5px;
+  }
+
+  .friend-heading strong {
+    font-size: 16px;
+  }
+
+  .friend-heading p {
+    font-size: 11px;
+  }
+
+  .friend-index {
+    font-size: 9.5px;
+  }
+
+  .friend-copy strong {
+    font-size: 13px;
+  }
+
+  .friend-copy small {
+    font-size: 9px;
+  }
+
+  .friend-copy em {
+    font-size: 10px;
+  }
+
+  .footer-bottom {
+    font-size: 9px;
+  }
+
+  .search-panel {
+    width: min(820px, 100%);
+  }
+
+  .search-start p {
+    font-size: 13px;
+  }
+
+  .search-suggestions button {
+    font-size: 11px;
+  }
+
+  .search-results-head {
+    font-size: 9px;
+  }
+
+  .search-result-kicker {
+    font-size: 8px;
+  }
+
+  .search-result-copy > strong {
+    font-size: 14.5px;
+  }
+
+  .search-result-copy em {
+    font-size: 9px;
+  }
+
+  .search-result-copy p {
+    font-size: 11px;
+  }
+
+  .search-result-side {
+    font-size: 9.5px;
+  }
+
+  .search-result-side small {
+    font-size: 9px;
+  }
+
+  .search-footer {
+    font-size: 8.5px;
   }
 }
 

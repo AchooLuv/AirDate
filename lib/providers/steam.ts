@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE } from "@/lib/constants";
 import { isValidDateKey } from "@/lib/date";
@@ -192,7 +193,7 @@ async function mapLimit<T, R>(
   return results;
 }
 
-export async function getSteamGames(): Promise<ReleaseItem[]> {
+async function loadSteamGames(): Promise<ReleaseItem[]> {
   return withCache("steam:featured:v5", REVALIDATE.steam, async () => {
     const featured = await fetchJson<SteamFeatured>(
       "https://store.steampowered.com/api/featuredcategories?cc=CN&l=schinese",
@@ -231,6 +232,16 @@ export async function getSteamGames(): Promise<ReleaseItem[]> {
       return mapped ? [mapped] : [];
     });
   });
+}
+
+const getCachedSteamGames = unstable_cache(
+  loadSteamGames,
+  ["steam-featured-v1"],
+  { revalidate: REVALIDATE.steam, tags: ["schedule", "steam"] },
+);
+
+export async function getSteamGames(): Promise<ReleaseItem[]> {
+  return getCachedSteamGames();
 }
 
 function matchesSearchQuery(

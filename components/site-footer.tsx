@@ -11,6 +11,27 @@ const SOURCES = [
   { name: "Steam", href: "https://store.steampowered.com/" },
 ];
 
+const FRIENDS = [
+  {
+    name: "作者博客",
+    href: "https://my.muri.life/",
+    host: "my.muri.life",
+    description: "写代码，也写生活",
+  },
+  {
+    name: "骡马搜图",
+    href: "https://soutu.muri.life/",
+    host: "soutu.muri.life",
+    description: "以图搜图，找灵感",
+  },
+  {
+    name: "正则教程",
+    href: "https://rejs.muri.life/",
+    host: "rejs.muri.life",
+    description: "把正则讲人话",
+  },
+];
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
@@ -36,6 +57,7 @@ export function SiteFooter() {
           <Link href="/">今日时间线</Link>
           <Link href="#upcoming">即将到来</Link>
           <Link href="#sources">数据源</Link>
+          <a href="#friends">友链</a>
           <a href={`${GITHUB_URL}#readme`} target="_blank" rel="noreferrer">
             README
             <ArrowUpRight size={11} />
@@ -64,6 +86,33 @@ export function SiteFooter() {
           <p>数据来自公开接口，时间与价格以官方最终信息为准。</p>
         </div>
       </div>
+
+      <section className="shell friend-strip" id="friends" aria-labelledby="friends-title">
+        <div className="friend-heading">
+          <span className="mono-label">FRIENDS</span>
+          <strong id="friends-title">同频的站点</strong>
+          <p>沿着这些链接，去别处逛逛。</p>
+        </div>
+        <div className="friend-grid">
+          {FRIENDS.map((friend, index) => (
+            <a
+              key={friend.href}
+              href={friend.href}
+              target="_blank"
+              rel="noreferrer"
+              className="friend-card"
+            >
+              <span className="friend-index">0{index + 1}</span>
+              <span className="friend-copy">
+                <strong>{friend.name}</strong>
+                <small>{friend.host}</small>
+                <em>{friend.description}</em>
+              </span>
+              <ArrowUpRight size={15} className="friend-arrow" />
+            </a>
+          ))}
+        </div>
+      </section>
 
       <div className="shell footer-bottom">
         <span>© {new Date().getFullYear()} AirDate</span>

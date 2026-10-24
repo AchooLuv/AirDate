@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE } from "@/lib/constants";
 import { addDays, timeInShanghai, toShanghaiKey, todayKey } from "@/lib/date";
@@ -128,7 +129,7 @@ async function scheduleFor(date: string, web: boolean): Promise<TvMazeEpisode[]>
   });
 }
 
-export async function getTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
+async function loadTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
   return withCache(`tvmaze:day:v4:${dateKey}`, REVALIDATE.tvmaze, async () => {
     const dates = [addDays(dateKey, -1), dateKey];
     const requests = dates.flatMap((date) => [
@@ -157,6 +158,16 @@ export async function getTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]>
       return left.localeCompare(right);
     });
   });
+}
+
+const getCachedTvmazeEpisodes = unstable_cache(
+  loadTvmazeEpisodes,
+  ["tvmaze-day-v1"],
+  { revalidate: REVALIDATE.tvmaze, tags: ["schedule", "tvmaze"] },
+);
+
+export async function getTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
+  return getCachedTvmazeEpisodes(dateKey);
 }
 
 type TvMazeSearchResult = {

@@ -143,7 +143,7 @@
 缓存分层：
   L1 进程内 Map（同实例热请求）
   L2 Upstash Redis（可选，跨实例）
-  L3 Next.js Data Cache（整天聚合 + fetch revalidate）
+  L3 Next.js Data Cache（各 provider 成功结果 + fetch revalidate）
   L4 Vercel CDN Cache-Control（API 响应）
 ```
 
@@ -154,7 +154,7 @@
 | SSR | `app/page.tsx` 使用 `force-dynamic`，首屏数据由服务端 `getDayData()` 直接产出 |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
-| 缓存 | 整天聚合结果写入 Next Data Cache；内存 + 可选 Upstash + CDN `s-maxage` |
+| 缓存 | 各 provider 成功结果写入 Next Data Cache；失败不缓存；内存 + 可选 Upstash + CDN `s-maxage` |
 | 定时任务 | Vercel Cron 每天调用 `/api/cron/refresh`，预热今天起 4 天的数据 |
 | 图片代理 | 白名单域名 + 来源 Referer + 7 天 CDN 缓存，解决豆瓣图片防盗链 |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
@@ -342,9 +342,9 @@ npm run start
 
 | 层级 | TTL / 行为 |
 | --- | --- |
-| 进程内 L1 | 首页聚合 5 分钟；番剧 30 分钟；豆瓣 3 小时；Steam 2 小时 |
+| 进程内 L1 | 番剧 30 分钟；豆瓣 3 小时；Steam 2 小时；TVMaze 1 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| Next Data Cache | 整天聚合结果缓存 5 分钟；每个上游 `fetch` 单独 `revalidate` |
+| Next Data Cache | 各 provider 成功结果单独缓存；失败结果不写入，避免把空页面缓存 5 分钟；搜索 30 分钟 |
 | CDN | `/api/schedule` `s-maxage=900`；`/api/search` `s-maxage=600`；图片 7 天 |
 | 失败降级 | 过期 6 小时内的 L1 数据可在上游失败时继续返回 |
 
@@ -455,6 +455,14 @@ AirDate 的 SEO 不是只靠 README：
 - 设置合理超时
 - 注明数据来源和许可
 - 不把需要保密的 Key 暴露到客户端
+
+---
+
+## 友链
+
+- [作者博客](https://my.muri.life/) — 写代码，也写生活
+- [骡马搜图](https://soutu.muri.life/) — 以图搜图，找灵感
+- [正则教程](https://rejs.muri.life/) — 把正则讲人话
 
 ---
 
