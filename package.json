@@ -1,0 +1,31 @@
+{
+  "name": "airdate",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AirDate — 电影、剧集、番剧与游戏的上映 / 放送 / 发售日历",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "sync:anime": "node scripts/sync-anime-index.mjs"
+  },
+  "dependencies": {
+    "lucide-react": "^1.61.0",
+    "next": "16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.19.1",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "bangumi-data": "^0.3.234",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
