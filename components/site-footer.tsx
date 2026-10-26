@@ -7,7 +7,7 @@ const SOURCES = [
   { name: "豆瓣", href: "https://movie.douban.com/" },
   { name: "TVMaze", href: "https://www.tvmaze.com/" },
   { name: "AniList", href: "https://anilist.co/" },
-  { name: "Bangumi", href: "https://bgm.tv/" },
+  { name: "bangumi-data", href: "https://github.com/bangumi-data/bangumi-data" },
   { name: "Steam", href: "https://store.steampowered.com/" },
 ];
 

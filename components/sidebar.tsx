@@ -138,12 +138,22 @@ export function Sidebar({
               <span className="source-status" data-status={source.status} />
               <span className="source-name">
                 {source.name}
-                {source.note ? <small>{source.note}</small> : null}
+                {source.note ? (
+                  <small>
+                    {source.note}
+                    {source.available && source.available > source.count
+                      ? ` · 收录 ${source.available}`
+                      : ""}
+                  </small>
+                ) : null}
               </span>
               <strong>{source.count}</strong>
             </div>
           ))}
         </div>
+        <p className="source-caption">
+          数字为今日条目；豆瓣待映内容会进入「即将到来」。
+        </p>
 
         <div className="rail-note">
           <span>TIMEZONE</span>

@@ -71,7 +71,7 @@ async function loadSearch(rawQuery: string): Promise<SearchResult[]> {
   const query = rawQuery.trim().slice(0, 80);
   if (query.length < SEARCH_MIN_LENGTH) return [];
 
-  return withCache(`search:all:v11:${query.toLowerCase()}`, REVALIDATE.search, async () => {
+  return withCache(`search:all:v12:${query.toLowerCase()}`, REVALIDATE.search, async () => {
     const settled = await Promise.allSettled([
       searchDouban(query),
       searchTvmaze(query),
@@ -110,7 +110,7 @@ async function loadSearch(rawQuery: string): Promise<SearchResult[]> {
   });
 }
 
-const getCachedSearch = unstable_cache(loadSearch, ["airdate-search-v1"], {
+const getCachedSearch = unstable_cache(loadSearch, ["airdate-search-v2"], {
   revalidate: REVALIDATE.search,
   tags: ["search"],
 });

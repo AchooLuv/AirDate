@@ -36,7 +36,10 @@ export type ReleaseItem = {
 export type SourceStatus = {
   name: string;
   status: "ok" | "empty" | "error";
+  /** Items contributed to the selected day. */
   count: number;
+  /** Items returned by the provider for this fetch (includes upcoming entries). */
+  available?: number;
   ms: number;
   note?: string;
 };

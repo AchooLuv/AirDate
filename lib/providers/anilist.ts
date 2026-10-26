@@ -187,7 +187,7 @@ function mediaSummary(media: AniListMedia): string {
 }
 
 async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
-  return withCache(`anilist:day:v6:${dateKey}`, REVALIDATE.anime, async () => {
+  return withCache(`anilist:day:v7:${dateKey}`, REVALIDATE.anime, async () => {
     const { from, to } = dayUnixRange(dateKey);
     const schedules: AniSchedule[] = [];
 
@@ -238,7 +238,7 @@ async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
         score: media.averageScore ? media.averageScore / 10 : undefined,
         genres: media.genres?.slice(0, 3),
         source: {
-          name: record?.z ? "AniList · Bangumi" : "AniList",
+          name: "AniList",
           url: media.siteUrl || `https://anilist.co/anime/${media.id}`,
         },
       });
@@ -250,7 +250,7 @@ async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
 
 const getCachedAnimeForDay = unstable_cache(
   loadAnimeForDay,
-  ["anilist-day-v1"],
+  ["anilist-day-v2"],
   { revalidate: REVALIDATE.anime, tags: ["schedule", "anilist"] },
 );
 
@@ -300,7 +300,7 @@ function searchResultFromMedia(media: AniListMedia): SearchResult {
       (value): value is string => Boolean(value),
     ),
     source: {
-      name: record?.z ? "AniList · Bangumi" : "AniList",
+      name: "AniList",
       url: media.siteUrl || `https://anilist.co/anime/${media.id}`,
     },
   };
@@ -323,14 +323,14 @@ function localRecordResult(record: AnimeIndexRecord): SearchResult {
       (value): value is string => Boolean(value),
     ),
     source: {
-      name: "Bangumi · AniList",
+      name: "AniList · 本地索引",
       url: `https://anilist.co/anime/${record.a}`,
     },
   };
 }
 
 export async function searchAniList(query: string): Promise<SearchResult[]> {
-  return withCache(`anilist:search:v7:${query.toLowerCase()}`, REVALIDATE.search, async () => {
+  return withCache(`anilist:search:v8:${query.toLowerCase()}`, REVALIDATE.search, async () => {
     // AniList's text search does not index Chinese titles, so resolve Chinese
     // queries through the local Bangumi index first, then hydrate via id_in.
     const local = searchAnimeRecords(query, 10);

@@ -178,8 +178,8 @@
 | 电影 | 豆瓣 `movie/coming_soon` | 中文名、简介、封面、上映日期、地区、导演 | 无 | 公开移动端接口，非官方 API；失败时页面仍可运行 |
 | 剧集 | 豆瓣 `tv/coming_soon` | 中文名、简介、封面、首播日期、平台图标 | 无 | 用于中文首播信息 |
 | 剧集 | TVMaze | 剧名、集名、季集、播出时间、电视网/流媒体 | 无 | 将 `airstamp` 统一换算为北京时间 |
-| 番剧 | AniList GraphQL | 放送时间、话数、封面、简介、评分、类型 | 无 | 按 AniList ID 关联中文索引 |
-| 番剧 | [bangumi-data](https://github.com/bangumi-data/bangumi-data) | 简体中文标题、配信平台、首播日期 | 无 | 本地生成索引，CC BY 4.0，见 [`data/README.md`](./data/README.md) |
+| 番剧 | AniList GraphQL | 放送时间、话数、封面、简介、评分、类型 | 无 | 主数据源；其标题字段不含中文 |
+| 番剧 | [bangumi-data](https://github.com/bangumi-data/bangumi-data) | 简体中文标题、配信平台、首播日期 | 无 | 仅本地索引，按 AniList ID 合并；无额外 API 请求，CC BY 4.0，见 [`data/README.md`](./data/README.md) |
 | 游戏 | Steam | 中文名/简介、封面、发售日期、价格（CNY）、平台、开发商 | 无 | 国区 `cc=cn&l=schinese`；中文搜索回退商店页 |
 
 ### 数据准确性
@@ -188,6 +188,8 @@
 - 电影以中国大陆定档优先；不同地区上映日期可能不同。
 - Steam 价格会随折扣、地区、预购状态变化，以商店页面为准。
 - 第三方接口可能限流、改版或短时不可用；每个 provider 都有超时与降级，单源失败不会拖垮整页。
+- **豆瓣显示 0 不一定是故障**：豆瓣主要负责“待映/首播”数据，如果当天没有豆瓣首映，时间线贡献为 0，但这些内容仍会出现在“即将到来”和搜索里。侧栏会显示“今日 0 · 收录 N”。
+- **AniList 本身没有简体中文标题字段**：它的 `MediaTitle` 只有 `romaji / english / native / userPreferred`。AirDate 用同 ID 的本地 `bangumi-data` 索引补 `zh-Hans` 标题和配信平台；索引是构建进服务端的 JSON，不会发起额外的 Bangumi API 请求。
 
 ---
 

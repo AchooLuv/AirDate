@@ -2081,6 +2081,13 @@ button {
   text-align: right;
 }
 
+.source-caption {
+  margin: 9px 0 0;
+  font-size: 8.5px;
+  line-height: 1.55;
+  color: var(--muted-2);
+}
+
 .rail-note {
   margin-top: 12px;
   padding-top: 12px;
@@ -3840,6 +3847,10 @@ button {
   }
 
   .source-row > strong {
+    font-size: 9.5px;
+  }
+
+  .source-caption {
     font-size: 9.5px;
   }
 

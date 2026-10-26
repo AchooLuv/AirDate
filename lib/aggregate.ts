@@ -126,6 +126,7 @@ function statusFor(
   dayItems: ReleaseItem[],
   startedAt: number,
   note?: string,
+  available?: number,
 ): SourceStatus {
   const count = dayItems.filter((item) => item.source.name.includes(name)).length;
   const ms = Date.now() - startedAt;
@@ -133,15 +134,18 @@ function statusFor(
     return {
       name,
       status: "error",
-      count,
+      count: 0,
+      available: 0,
       ms,
       note: settled.reason instanceof Error ? settled.reason.message : "数据源暂时不可用",
     };
   }
+  const total = available ?? settled.value.length;
   return {
     name,
-    status: count > 0 ? "ok" : settled.value.length > 0 ? "ok" : "empty",
+    status: total > 0 ? "ok" : "empty",
     count,
+    available: total,
     ms,
     note,
   };
@@ -202,10 +206,17 @@ async function loadDayData(dateKey: string): Promise<DayData> {
         };
 
   const sourceStatuses: SourceStatus[] = [
-    statusFor("豆瓣", doubanSettled, items, timings.douban, "电影 · 剧集 · 番剧首播"),
-    statusFor("TVMaze", tvmaze, items, timings.tvmaze, "北美电视网与流媒体"),
-    statusFor("AniList", anime, items, timings.anime, "AniList 放送表 · Bangumi 中文索引"),
-    statusFor("Steam", games, items, timings.steam, "国区即将发售与新作"),
+    statusFor(
+      "豆瓣",
+      doubanSettled,
+      items,
+      timings.douban,
+      "电影 · 剧集 · 番剧首播",
+      movies.length + series.length + doubanAnime.length,
+    ),
+    statusFor("TVMaze", tvmaze, items, timings.tvmaze, "北美电视网与流媒体", episodes.length),
+    statusFor("AniList", anime, items, timings.anime, "AniList 放送表 · 本地中文索引", animeItems.length),
+    statusFor("Steam", games, items, timings.steam, "国区即将发售与新作", gameItems.length),
   ];
 
   return {
@@ -231,7 +242,7 @@ async function loadDayDataForCache(dateKey: string): Promise<DayData> {
   return data;
 }
 
-const getCachedDayData = unstable_cache(loadDayDataForCache, ["airdate-day-v2"], {
+const getCachedDayData = unstable_cache(loadDayDataForCache, ["airdate-day-v3"], {
   revalidate: 300,
   tags: ["schedule"],
 });
