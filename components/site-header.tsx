@@ -1,11 +1,18 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { GithubIcon } from "@/components/github-icon";
 import { GITHUB_URL } from "@/lib/constants";
+import { scrollToSection } from "@/lib/scroll";
 
 export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
+  const handleNav = (event: MouseEvent<HTMLAnchorElement>, id: string) => {
+    event.preventDefault();
+    scrollToSection(id);
+  };
+
   return (
     <header className="site-header">
       <div className="shell header-inner">
@@ -22,15 +29,27 @@ export function SiteHeader({ onOpenSearch }: { onOpenSearch: () => void }) {
         </Link>
 
         <nav className="header-nav" aria-label="主导航">
-          <Link href="/" className="nav-link is-active">
+          <a
+            href="#timeline"
+            className="nav-link is-active"
+            onClick={(event) => handleNav(event, "timeline")}
+          >
             时间线
-          </Link>
-          <Link href="#upcoming" className="nav-link">
+          </a>
+          <a
+            href="#upcoming"
+            className="nav-link"
+            onClick={(event) => handleNav(event, "upcoming")}
+          >
             即将到来
-          </Link>
-          <Link href="#sources" className="nav-link">
+          </a>
+          <a
+            href="#sources"
+            className="nav-link"
+            onClick={(event) => handleNav(event, "sources")}
+          >
             数据源
-          </Link>
+          </a>
         </nav>
 
         <div className="header-actions">

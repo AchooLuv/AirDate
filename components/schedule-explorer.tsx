@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CalendarX2, Search, SlidersHorizontal, X } from "lucide-react";
 import { ReleaseCard } from "@/components/release-card";
@@ -14,6 +14,7 @@ import {
   formatMonthDay,
   weekdayCN,
 } from "@/lib/date";
+import { scrollToSection } from "@/lib/scroll";
 import type { Category, DayData, ReleaseItem } from "@/lib/types";
 
 type Filter = Category | "all";
@@ -46,6 +47,30 @@ export function ScheduleExplorer({
   onOpenSearch: () => void;
 }) {
   const [filter, setFilter] = useState<Filter>("all");
+  const scrollOnFilterChange = useRef(false);
+
+  useEffect(() => {
+    if (!scrollOnFilterChange.current) return;
+    scrollOnFilterChange.current = false;
+
+    const frame = window.requestAnimationFrame(() => {
+      scrollToSection("timeline", { behavior: "auto", updateHash: false });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [filter]);
+
+  const changeFilter = (next: Filter) => {
+    if (next === filter) {
+      scrollToSection("timeline", { behavior: "auto", updateHash: false });
+      return;
+    }
+    scrollOnFilterChange.current = true;
+    setFilter(next);
+  };
+
+  const selectSidebarCategory = (category: Category) => {
+    changeFilter(filter === category ? "all" : category);
+  };
 
   const filtered = useMemo(
     () =>
@@ -76,7 +101,7 @@ export function ScheduleExplorer({
             type="button"
             className="category-tab category-tab-all"
             data-active={filter === "all"}
-            onClick={() => setFilter("all")}
+            onClick={() => changeFilter("all")}
             aria-pressed={filter === "all"}
           >
             <SlidersHorizontal size={13} aria-hidden="true" />
@@ -94,7 +119,7 @@ export function ScheduleExplorer({
                 data-active={filter === category}
                 data-category={category}
                 style={{ "--accent": meta.accent, "--accent-soft": meta.accentSoft } as CSSProperties}
-                onClick={() => setFilter(category)}
+                onClick={() => changeFilter(category)}
                 aria-pressed={filter === category}
               >
                 <Icon size={13} aria-hidden="true" />
@@ -137,7 +162,7 @@ export function ScheduleExplorer({
               date={date}
               today={today}
               nextItem={nextInCategory}
-              onClear={() => setFilter("all")}
+              onClear={() => changeFilter("all")}
               onSearch={onOpenSearch}
             />
           ) : (
@@ -174,9 +199,7 @@ export function ScheduleExplorer({
           data={data}
           today={today}
           active={filter}
-          onSelect={(category) =>
-            setFilter((current) => (current === category ? "all" : category))
-          }
+          onSelect={selectSidebarCategory}
         />
       </div>
     </section>
