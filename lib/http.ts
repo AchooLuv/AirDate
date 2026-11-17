@@ -3,9 +3,12 @@ const DEFAULT_UA =
 
 type FetchOptions = RequestInit & {
   timeoutMs?: number;
-  revalidate?: number;
   tags?: string[];
+  /** Use for dynamic, query-specific requests that should not create Data Cache entries. */
+  noStore?: boolean;
 };
+
+const REVALIDATE_SECONDS = 3_600;
 
 export class UpstreamError extends Error {
   status: number;
@@ -25,8 +28,8 @@ export async function fetchJson<T>(
 ): Promise<T> {
   const {
     timeoutMs = 9_000,
-    revalidate = 1_800,
     tags = ["airdate"],
+    noStore = false,
     headers,
     ...init
   } = options;
@@ -39,7 +42,9 @@ export async function fetchJson<T>(
       ...headers,
     },
     signal: AbortSignal.timeout(timeoutMs),
-    next: init.method && init.method !== "GET" ? undefined : { revalidate, tags },
+    ...(noStore
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: REVALIDATE_SECONDS, tags } }),
   });
 
   if (!response.ok) {
@@ -61,8 +66,13 @@ export async function fetchText(
   url: string,
   options: FetchOptions = {},
 ): Promise<string> {
-  const { timeoutMs = 9_000, revalidate = 3_600, tags = ["airdate"], headers, ...init } =
-    options;
+  const {
+    timeoutMs = 9_000,
+    tags = ["airdate"],
+    noStore = false,
+    headers,
+    ...init
+  } = options;
 
   const response = await fetch(url, {
     ...init,
@@ -72,7 +82,9 @@ export async function fetchText(
       ...headers,
     },
     signal: AbortSignal.timeout(timeoutMs),
-    next: { revalidate, tags },
+    ...(noStore
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: REVALIDATE_SECONDS, tags } }),
   });
 
   if (!response.ok) {

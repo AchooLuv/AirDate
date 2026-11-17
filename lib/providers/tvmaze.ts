@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE } from "@/lib/constants";
 import { addDays, timeInShanghai, toShanghaiKey, todayKey } from "@/lib/date";
@@ -99,7 +98,10 @@ function mapEpisode(episode: TvMazeEpisode): ReleaseItem | null {
     category: "series",
     title: show.name,
     summary,
-    cover: proxiedCover(episode.image?.original || show.image?.original),
+    cover: proxiedCover(
+      episode.image?.medium || show.image?.medium ||
+        episode.image?.original || show.image?.original,
+    ),
     date,
     time,
     startsAt: episode.airstamp,
@@ -123,13 +125,12 @@ async function scheduleFor(date: string, web: boolean): Promise<TvMazeEpisode[]>
     ? `https://api.tvmaze.com/schedule/web?date=${date}`
     : `https://api.tvmaze.com/schedule?date=${date}&country=US`;
   return fetchJson<TvMazeEpisode[]>(url, {
-    revalidate: REVALIDATE.tvmaze,
     tags: ["schedule", "tvmaze"],
     timeoutMs: 8_000,
   });
 }
 
-async function loadTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
+export async function getTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
   return withCache(`tvmaze:day:v4:${dateKey}`, REVALIDATE.tvmaze, async () => {
     const dates = [addDays(dateKey, -1), dateKey];
     const requests = dates.flatMap((date) => [
@@ -160,16 +161,6 @@ async function loadTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
   });
 }
 
-const getCachedTvmazeEpisodes = unstable_cache(
-  loadTvmazeEpisodes,
-  ["tvmaze-day-v1"],
-  { revalidate: REVALIDATE.tvmaze, tags: ["schedule", "tvmaze"] },
-);
-
-export async function getTvmazeEpisodes(dateKey: string): Promise<ReleaseItem[]> {
-  return getCachedTvmazeEpisodes(dateKey);
-}
-
 type TvMazeSearchResult = {
   score: number;
   show: TvMazeShow;
@@ -180,8 +171,8 @@ export async function searchTvmaze(query: string): Promise<SearchResult[]> {
     const results = await fetchJson<TvMazeSearchResult[]>(
       `https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`,
       {
-        revalidate: REVALIDATE.search,
         tags: ["search", "tvmaze"],
+        noStore: true,
         timeoutMs: 7_000,
       },
     );
@@ -193,7 +184,7 @@ export async function searchTvmaze(query: string): Promise<SearchResult[]> {
         category: "series",
         title: show.name,
         summary: stripHtml(show.summary) || "TVMaze 剧集条目。",
-        cover: proxiedCover(show.image?.original),
+        cover: proxiedCover(show.image?.medium || show.image?.original),
         date: show.premiered || todayKey(),
         dateLabel: show.premiered
           ? `首播 ${show.premiered}`

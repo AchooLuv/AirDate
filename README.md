@@ -85,7 +85,7 @@
 - 桌面双栏（时间线 + 粘性侧栏），移动端单栏 + 紧凑卡片。
 - 支持 `prefers-reduced-motion`，动画会自动收敛。
 - 语义化标题、`aria-label`、`aria-pressed`、跳过导航链接、可见焦点环。
-- 图片经过同域代理和长缓存，加载前有 shimmer 占位。
+- 非豆瓣封面直接走源站 CDN；豆瓣封面经同域代理和长缓存，加载前有 shimmer 占位。
 
 ---
 
@@ -143,7 +143,7 @@
 缓存分层：
   L1 进程内 Map（同实例热请求）
   L2 Upstash Redis（可选，跨实例）
-  L3 Next.js Data Cache（各 provider 成功结果 + fetch revalidate）
+  L3 Next.js ISR 页面缓存（首页 / 日期页，1 小时）
   L4 Vercel CDN Cache-Control（API 响应）
 ```
 
@@ -151,12 +151,12 @@
 
 | 设计 | 做法 |
 | --- | --- |
-| SSR + ISR | `/` 预渲染并每 5 分钟 revalidate；`/date/[date]` 按需生成并缓存；首屏始终是服务端 HTML |
+| SSR + ISR | `/` 预渲染并每小时 revalidate；`/date/[date]` 按需生成并缓存；首屏始终是服务端 HTML |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
-| 缓存 | 聚合日结果 + 各 provider 成功结果写入 Next Data Cache；降级空结果不缓存；内存 + 可选 Upstash + CDN `s-maxage` |
-| 定时任务 | Vercel Cron 每天调用 `/api/cron/refresh`，预热今天起 4 天的数据 |
-| 图片代理 | 白名单域名 + 来源 Referer + 7 天 CDN 缓存，解决豆瓣图片防盗链 |
+| 缓存 | ISR 页面 1 小时 + API CDN 15–30 分钟；进程内 L1 和可选 Upstash；不再为每个 provider 写入 Data Cache |
+| 更新策略 | 不再使用 Cron 预热；页面 ISR 每小时按需刷新，API 响应交给 CDN 缓存 |
+| 图片 | 豆瓣需要 Referer，走代理并缓存 1 年；TVMaze / AniList / Steam 直接使用源站 CDN |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
 
 ### 为什么没有直接用 Simkl / TMDB / IGDB / RAWG？
@@ -200,8 +200,8 @@
 - **样式**：Tailwind CSS 4 + 手写设计系统（`app/globals.css`）
 - **字体**：Space Grotesk + JetBrains Mono（`next/font`），中文回退到系统字体
 - **图标**：Lucide React
-- **部署**：Vercel（Serverless Functions + Cron + CDN）
-- **缓存**：Next.js Data Cache + 进程内缓存 + 可选 Upstash Redis
+- **部署**：Vercel（Serverless Functions + ISR + CDN）
+- **缓存**：Next.js ISR 页面缓存 + 进程内缓存 + 可选 Upstash Redis
 - **数据**：豆瓣 / TVMaze / AniList / bangumi-data / Steam
 
 ---
@@ -223,9 +223,8 @@ AirDate/
 │   └── api/
 │       ├── schedule/route.ts    # 日时间线 JSON
 │       ├── search/route.ts      # 聚合搜索 JSON
-│       ├── image/route.ts       # 图片白名单反代 + 缓存
-│       ├── health/route.ts      # 健康检查
-│       └── cron/refresh/route.ts# Vercel Cron 预热
+│       ├── image/route.ts       # 豆瓣图片反代 + 长缓存
+│       └── health/route.ts      # 健康检查
 ├── components/                  # Header / Hero / Timeline / Sidebar / SearchDialog …
 ├── lib/
 │   ├── aggregate.ts             # 跨源聚合、去重、排序、来源状态
@@ -237,7 +236,7 @@ AirDate/
 ├── data/anime-index.json        # 由 bangumi-data 生成的紧凑索引
 ├── scripts/sync-anime-index.mjs # 索引同步脚本
 ├── docs/                        # README 截图
-├── vercel.json                  # Cron 配置
+├── vercel.json                  # Vercel 配置
 └── .env.example
 ```
 
@@ -270,7 +269,6 @@ cp .env.example .env.local
 | 变量 | 必填 | 用途 |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | 否 | 生产域名，用于 canonical / sitemap / OG；默认 `https://muri.life` |
-| `CRON_SECRET` | 否 | 保护 `/api/cron/refresh`；Vercel Cron 会自动带 `Authorization: Bearer` |
 | `UPSTASH_REDIS_REST_URL` | 否 | Upstash Redis REST URL，启用跨实例缓存 |
 | `UPSTASH_REDIS_REST_TOKEN` | 否 | Upstash Redis REST Token |
 | `SOURCE_CONTACT` | 否 | 出站 User-Agent 中的联系地址 |
@@ -326,20 +324,10 @@ npm run start
 1. 将仓库导入 Vercel，Framework Preset 选择 **Next.js**。
 2. 在 Project Settings → Environment Variables 配置：
    - `NEXT_PUBLIC_SITE_URL` = 你的正式域名
-   - `CRON_SECRET`（推荐）
-   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`（可选但推荐）
-3. 部署。Vercel 会自动识别 `vercel.json` 中的 Cron。
-4. 在 Upstash 创建免费 Redis 数据库，复制 REST URL 和 Token 到 Vercel。
-5. 首次冷启动可能较慢；Cron 会在每天固定时间预热今天起 4 天的数据。
-
-`vercel.json` 中的两个 Cron：
-
-```json
-{ "path": "/api/cron/refresh", "schedule": "5 16 * * *" }
-{ "path": "/api/cron/refresh", "schedule": "5 4 * * *" }
-```
-
-对应北京时间 **00:05** 和 **12:05**。不同 Vercel 计划的 Cron 数量/频率限制不同，如计划受限可保留一条。
+   - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`（可选，仅用于跨实例共享）
+3. 部署。页面由 ISR 每小时刷新，不需要额外 Cron。
+4. 首次冷启动可能较慢；之后由 ISR 和 CDN 承接。
+5. 免费额度紧张时，不要恢复 `unstable_cache` 或缩短 ISR 间隔，这两项会直接增加 ISR Writes 与 Fast Origin Transfer。
 
 ### 缓存策略
 
@@ -347,9 +335,18 @@ npm run start
 | --- | --- |
 | 进程内 L1 | 番剧 30 分钟；豆瓣 3 小时；Steam 2 小时；TVMaze 1 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| Next Data Cache | 日聚合 5 分钟 + 各 provider 成功结果单独缓存；降级空结果不写入；搜索 30 分钟 |
-| CDN | `/api/schedule` `s-maxage=900`；`/api/search` `s-maxage=600`；图片 7 天 |
+| ISR 页面 | 首页和日期页缓存 1 小时，避免每 5 分钟产生一次页面回源 |
+| API CDN | `/api/schedule` `s-maxage=1800`；`/api/search` `s-maxage=900`；图片 1 年 |
+| 图片源站 | TVMaze / AniList / Steam 直连源站 CDN；只有豆瓣图片经过 Function |
 | 失败降级 | 过期 6 小时内的 L1 数据可在上游失败时继续返回 |
+
+### Vercel 免费额度友好设计
+
+- **ISR 从 5 分钟改为 1 小时**：首页/日期页回源和 ISR Writes 直接下降约 12 倍。
+- **移除 provider 级 `unstable_cache`**：不再为每个日期、每个数据源、每次搜索写 Data Cache，只保留页面 ISR 和 CDN。
+- **图片直连源站**：TVMaze / AniList / Steam 封面不再经过 Function；只有豆瓣防盗链图片走代理。
+- **缩小封面尺寸**：TVMaze 用 `medium` 而不是 `original`，AniList 用 `large` 而不是 `extraLarge`，单张图从数百 KB 降到几十 KB。
+- 结果：Fast Origin Transfer 主要只剩页面回源，ISR Writes 只跟页面更新频率相关。
 
 ---
 
@@ -397,21 +394,13 @@ GET /api/search?q=空洞骑士
 {
   "ok": true,
   "timezone": "Asia/Shanghai",
-  "cache": { "nextDataCache": true, "memory": true, "upstash": false }
+  "cache": { "isr": true, "memory": true, "upstash": false }
 }
-```
-
-### `GET /api/cron/refresh`
-
-预热今天起 4 天的数据。配置 `CRON_SECRET` 时需要：
-
-```http
-Authorization: Bearer <CRON_SECRET>
 ```
 
 ### `GET /api/image?src=...`
 
-内部图片代理，仅允许白名单域名，带 Referer 和 7 天缓存。不要把它当通用代理使用。
+内部图片代理，仅用于需要 Referer 的豆瓣封面，带 1 年缓存。不要把它当通用代理使用。
 
 ---
 

@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE } from "@/lib/constants";
 import { isValidDateKey } from "@/lib/date";
@@ -124,7 +123,6 @@ async function appDetail(appId: number): Promise<SteamAppDetails["data"] | null>
       `https://store.steampowered.com/api/appdetails?appids=${appId}&cc=cn&l=schinese`,
       {
         headers: STEAM_HEADERS,
-        revalidate: REVALIDATE.steamDetails,
         tags: ["schedule", "steam"],
         timeoutMs: 5_000,
       },
@@ -193,13 +191,12 @@ async function mapLimit<T, R>(
   return results;
 }
 
-async function loadSteamGames(): Promise<ReleaseItem[]> {
+export async function getSteamGames(): Promise<ReleaseItem[]> {
   return withCache("steam:featured:v5", REVALIDATE.steam, async () => {
     const featured = await fetchJson<SteamFeatured>(
       "https://store.steampowered.com/api/featuredcategories?cc=CN&l=schinese",
       {
         headers: STEAM_HEADERS,
-        revalidate: REVALIDATE.steam,
         tags: ["schedule", "steam"],
         timeoutMs: 7_000,
       },
@@ -234,16 +231,6 @@ async function loadSteamGames(): Promise<ReleaseItem[]> {
   });
 }
 
-const getCachedSteamGames = unstable_cache(
-  loadSteamGames,
-  ["steam-featured-v1"],
-  { revalidate: REVALIDATE.steam, tags: ["schedule", "steam"] },
-);
-
-export async function getSteamGames(): Promise<ReleaseItem[]> {
-  return getCachedSteamGames();
-}
-
 function matchesSearchQuery(
   query: string,
   data: NonNullable<SteamAppDetails["data"]> | null | undefined,
@@ -269,8 +256,8 @@ export async function searchSteam(query: string): Promise<SearchResult[]> {
       )}&cc=cn&l=schinese`,
       {
         headers: STEAM_HEADERS,
-        revalidate: REVALIDATE.search,
         tags: ["search", "steam"],
+        noStore: true,
         timeoutMs: 8_000,
       },
     );
@@ -293,8 +280,8 @@ export async function searchSteam(query: string): Promise<SearchResult[]> {
         )}&cc=cn&l=schinese`,
         {
           headers: STEAM_HEADERS,
-          revalidate: REVALIDATE.search,
           tags: ["search", "steam"],
+          noStore: true,
           timeoutMs: 10_000,
         },
       );

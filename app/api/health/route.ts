@@ -18,7 +18,8 @@ export async function GET() {
         steam: "public, keyless",
       },
       cache: {
-        nextDataCache: true,
+        isr: true,
+        providerDataCache: false,
         memory: true,
         upstash: Boolean(
           process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN,

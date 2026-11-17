@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import {
   findAnimeById,
   findAnimeByTitle,
@@ -19,7 +18,12 @@ type AniListMedia = {
     native?: string | null;
     english?: string | null;
   };
-  coverImage?: { extraLarge?: string; large?: string; color?: string } | null;
+  coverImage?: {
+    extraLarge?: string;
+    large?: string;
+    medium?: string;
+    color?: string;
+  } | null;
   description?: string | null;
   siteUrl?: string;
   format?: string;
@@ -60,7 +64,7 @@ const SCHEDULE_QUERY = `
         media {
           id
           title { romaji native english }
-          coverImage { extraLarge large color }
+          coverImage { extraLarge large medium color }
           description
           siteUrl
           format
@@ -80,7 +84,7 @@ const SEARCH_QUERY = `
       media(search: $q, type: ANIME, sort: SEARCH_MATCH) {
         id
         title { romaji native english }
-        coverImage { extraLarge large color }
+        coverImage { extraLarge large medium color }
         description
         siteUrl
         format
@@ -101,7 +105,7 @@ const BY_IDS_QUERY = `
       media(id_in: $ids, type: ANIME) {
         id
         title { romaji native english }
-        coverImage { extraLarge large color }
+        coverImage { extraLarge large medium color }
         description
         siteUrl
         format
@@ -186,7 +190,7 @@ function mediaSummary(media: AniListMedia): string {
   return truncateText(stripHtml(media.description), 420);
 }
 
-async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
+export async function getAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
   return withCache(`anilist:day:v7:${dateKey}`, REVALIDATE.anime, async () => {
     const { from, to } = dayUnixRange(dateKey);
     const schedules: AniSchedule[] = [];
@@ -226,7 +230,9 @@ async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
         originalTitle,
         summary: mediaSummary(media),
         cover: proxiedCover(
-          media.coverImage?.extraLarge || media.coverImage?.large,
+          media.coverImage?.large ||
+            media.coverImage?.medium ||
+            media.coverImage?.extraLarge,
         ),
         date: shanghaiDate,
         time: timeInShanghai(schedule.airingAt * 1_000),
@@ -246,16 +252,6 @@ async function loadAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
 
     return items.sort((a, b) => (a.startsAt ?? "").localeCompare(b.startsAt ?? ""));
   });
-}
-
-const getCachedAnimeForDay = unstable_cache(
-  loadAnimeForDay,
-  ["anilist-day-v2"],
-  { revalidate: REVALIDATE.anime, tags: ["schedule", "anilist"] },
-);
-
-export async function getAnimeForDay(dateKey: string): Promise<ReleaseItem[]> {
-  return getCachedAnimeForDay(dateKey);
 }
 
 function startDateKey(media: AniListMedia): string | undefined {
@@ -288,7 +284,11 @@ function searchResultFromMedia(media: AniListMedia): SearchResult {
     title,
     originalTitle,
     summary: mediaSummary(media) || "AniList 番剧条目，点击查看详情。",
-    cover: proxiedCover(media.coverImage?.extraLarge || media.coverImage?.large),
+    cover: proxiedCover(
+      media.coverImage?.large ||
+        media.coverImage?.medium ||
+        media.coverImage?.extraLarge,
+    ),
     date,
     dateLabel,
     platforms: platformsOf(media, record),

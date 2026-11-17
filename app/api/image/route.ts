@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
         ...(referer ? { Referer: referer } : {}),
       },
       signal: AbortSignal.timeout(9_000),
-      next: { revalidate: 86_400, tags: ["image"] },
+      cache: "no-store",
     });
 
     if (!upstream.ok) {
@@ -47,8 +47,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": contentType,
         "Content-Length": String(buffer.byteLength),
-        "Cache-Control":
-          "public, max-age=86400, s-maxage=604800, stale-while-revalidate=86400",
+        "Cache-Control": "public, max-age=31536000, immutable",
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": "default-src 'none'; img-src data:",
       },

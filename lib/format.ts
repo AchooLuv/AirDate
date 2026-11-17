@@ -9,6 +9,11 @@ const PROXY_HOSTS = [
   "wikimedia.org",
 ];
 
+// Douban rejects images without a same-site Referer. Every other source
+// permits direct hotlinking, so new pages bypass the Vercel function and save
+// origin transfer. The wider proxy allowlist still serves old cached page HTML.
+const COVER_PROXY_HOSTS = ["doubanio.com"];
+
 const HOST_REFERERS: Array<[string, string]> = [
   ["doubanio.com", "https://movie.douban.com/"],
   ["bgm.tv", "https://bgm.tv/"],
@@ -32,6 +37,12 @@ export function proxiedCover(rawUrl: string | null | undefined): string | undefi
   if (!rawUrl) return undefined;
   if (!rawUrl.startsWith("https://")) return undefined;
   if (!canProxyImage(rawUrl)) return rawUrl;
+
+  const host = new URL(rawUrl).hostname;
+  const shouldProxy = COVER_PROXY_HOSTS.some(
+    (suffix) => host === suffix || host.endsWith(`.${suffix}`),
+  );
+  if (!shouldProxy) return rawUrl;
   return `/api/image?src=${encodeURIComponent(rawUrl)}`;
 }
 

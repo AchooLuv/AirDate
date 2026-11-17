@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(filtered, {
       headers: {
         "Cache-Control":
-          "public, max-age=0, s-maxage=900, stale-while-revalidate=3600",
+          "public, max-age=0, s-maxage=1800, stale-while-revalidate=3600",
         "Access-Control-Allow-Origin": "*",
       },
     });

@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { findAnimeByTitle } from "@/lib/anime-index";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE, SEARCH_LIMIT, SEARCH_MIN_LENGTH } from "@/lib/constants";
@@ -110,13 +109,8 @@ async function loadSearch(rawQuery: string): Promise<SearchResult[]> {
   });
 }
 
-const getCachedSearch = unstable_cache(loadSearch, ["airdate-search-v2"], {
-  revalidate: REVALIDATE.search,
-  tags: ["search"],
-});
-
 export async function searchAll(query: string): Promise<SearchResult[]> {
   const trimmed = query.trim().slice(0, 80);
   if (trimmed.length < SEARCH_MIN_LENGTH) return [];
-  return getCachedSearch(trimmed);
+  return loadSearch(trimmed);
 }

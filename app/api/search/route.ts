@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   if (!query) {
     return NextResponse.json(
       { query, results: [] },
-      { headers: { "Cache-Control": "public, s-maxage=300" } },
+      { headers: { "Cache-Control": "public, s-maxage=600" } },
     );
   }
 
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       {
         headers: {
           "Cache-Control":
-            "public, max-age=0, s-maxage=600, stale-while-revalidate=1800",
+            "public, max-age=0, s-maxage=900, stale-while-revalidate=1800",
         },
       },
     );

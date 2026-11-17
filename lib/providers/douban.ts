@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { withCache } from "@/lib/cache";
 import { REVALIDATE } from "@/lib/constants";
 import { isValidDateKey } from "@/lib/date";
@@ -166,14 +165,13 @@ async function doubanList(path: string, start = 0, count = 50): Promise<DoubanLi
     `https://m.douban.com/rexxar/api/v2/${path}?start=${start}&count=${count}`,
     {
       headers: DOUBAN_HEADERS,
-      revalidate: REVALIDATE.douban,
       tags: ["schedule", "douban"],
       timeoutMs: 9_000,
     },
   );
 }
 
-async function loadDoubanMovies(): Promise<ReleaseItem[]> {
+export async function getDoubanMovies(): Promise<ReleaseItem[]> {
   return withCache("douban:movies:v3", REVALIDATE.douban, async () => {
     const payload = await doubanList("movie/coming_soon", 0, 50);
     return (payload.subjects ?? []).flatMap((subject) => {
@@ -184,7 +182,7 @@ async function loadDoubanMovies(): Promise<ReleaseItem[]> {
   });
 }
 
-async function loadDoubanSeries(): Promise<ReleaseItem[]> {
+export async function getDoubanSeries(): Promise<ReleaseItem[]> {
   return withCache("douban:series:v3", REVALIDATE.douban, async () => {
     const first = await doubanList("tv/coming_soon", 0, 50);
     const total = Math.min(first.total ?? 0, 160);
@@ -221,26 +219,6 @@ async function loadDoubanSeries(): Promise<ReleaseItem[]> {
   });
 }
 
-const getCachedDoubanMovies = unstable_cache(
-  loadDoubanMovies,
-  ["douban-movies-v1"],
-  { revalidate: REVALIDATE.douban, tags: ["schedule", "douban"] },
-);
-
-const getCachedDoubanSeries = unstable_cache(
-  loadDoubanSeries,
-  ["douban-series-v1"],
-  { revalidate: REVALIDATE.douban, tags: ["schedule", "douban"] },
-);
-
-export async function getDoubanMovies(): Promise<ReleaseItem[]> {
-  return getCachedDoubanMovies();
-}
-
-export async function getDoubanSeries(): Promise<ReleaseItem[]> {
-  return getCachedDoubanSeries();
-}
-
 type DoubanSuggestion = {
   id: string;
   title: string;
@@ -257,8 +235,8 @@ export async function searchDouban(query: string): Promise<SearchResult[]> {
       `https://movie.douban.com/j/subject_suggest?q=${encodeURIComponent(query)}`,
       {
         headers: DOUBAN_HEADERS,
-        revalidate: REVALIDATE.search,
         tags: ["search", "douban"],
+        noStore: true,
         timeoutMs: 7_000,
       },
     );
