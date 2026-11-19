@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import {
   GITHUB_URL,
@@ -92,6 +93,7 @@ export default function RootLayout({
     <html lang="zh-CN" className={`${display.variable} ${mono.variable}`}>
       <body>
         {children}
+        <Analytics />
         <div className="page-grain" aria-hidden="true" />
       </body>
     </html>
