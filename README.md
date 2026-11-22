@@ -143,19 +143,20 @@
 缓存分层：
   L1 进程内 Map（同实例热请求）
   L2 Upstash Redis（可选，跨实例）
-  L3 Next.js ISR 页面缓存（首页 / 日期页，6 小时）
-  L4 Vercel CDN Cache-Control（API 响应）
+  L3 Next.js Data Cache（按日期缓存整天聚合，24 小时）
+  L4 ISR 页面缓存（首页 / 日期页，24 小时）
+  L5 Vercel CDN Cache-Control（API 响应）
 ```
 
 ### 关键设计
 
 | 设计 | 做法 |
 | --- | --- |
-| SSR + ISR | `/` 与 `/date/[date]` 每 6 小时 revalidate；日期链接关闭预取；首屏始终是服务端 HTML |
+| SSR + ISR | `/` 与 `/date/[date]` 每天 revalidate；每天 00:05 通过 Cron 预热并刷新页面；首屏始终是服务端 HTML |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
-| 缓存 | ISR 页面 6 小时 + API CDN 15–30 分钟；进程内 L1 和可选 Upstash |
-| 更新策略 | 不再使用 Cron 预热；日期链接关闭 prefetch，避免访问一次就预生成多张日期页 |
+| 缓存 | 整天聚合结果缓存 24 小时 + ISR 页面 24 小时 + API CDN 15–30 分钟；进程内 L1 和可选 Upstash |
+| 更新策略 | 每天 00:05 由 Cron 拉取一次今天起 8 天的数据并刷新页面；日期链接关闭 prefetch |
 | 图片 | 豆瓣需要 Referer，走代理并缓存 1 年；TVMaze / AniList / Steam 直接使用源站 CDN |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
 
@@ -224,6 +225,7 @@ AirDate/
 │       ├── schedule/route.ts    # 日时间线 JSON
 │       ├── search/route.ts      # 聚合搜索 JSON
 │       ├── image/route.ts       # 豆瓣图片反代 + 长缓存
+│       ├── cron/daily/route.ts  # 每天 00:05 预热/刷新
 │       └── health/route.ts      # 健康检查
 ├── components/                  # Header / Hero / Timeline / Sidebar / SearchDialog …
 ├── lib/
@@ -269,6 +271,7 @@ cp .env.example .env.local
 | 变量 | 必填 | 用途 |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SITE_URL` | 否 | 生产域名，用于 canonical / sitemap / OG；默认 `https://muri.life` |
+| `CRON_SECRET` | 否 | 保护每日 Cron 刷新接口 |
 | `UPSTASH_REDIS_REST_URL` | 否 | Upstash Redis REST URL，启用跨实例缓存 |
 | `UPSTASH_REDIS_REST_TOKEN` | 否 | Upstash Redis REST Token |
 | `SOURCE_CONTACT` | 否 | 出站 User-Agent 中的联系地址 |
@@ -324,10 +327,11 @@ npm run start
 1. 将仓库导入 Vercel，Framework Preset 选择 **Next.js**。
 2. 在 Project Settings → Environment Variables 配置：
    - `NEXT_PUBLIC_SITE_URL` = 你的正式域名
+   - `CRON_SECRET`（推荐）
    - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`（可选，仅用于跨实例共享）
-3. 部署。页面由 ISR 每 6 小时刷新，不需要额外 Cron。
-4. 首次冷启动可能较慢；之后由 ISR 和 CDN 承接。
-5. 免费额度紧张时，不要恢复 `unstable_cache` 或缩短 ISR 间隔，这两项会直接增加 ISR Writes 与 Fast Origin Transfer。
+3. 部署。`vercel.json` 会注册每天 00:05（北京时间）的 `/api/cron/daily`。
+4. 首次冷启动可能较慢；之后由 24h 日缓存、ISR 和 CDN 承接。
+5. 免费额度紧张时，不要缩短日缓存/ISR 间隔；这是 ISR Writes 与 Fast Origin Transfer 的主要开关。
 
 ### 缓存策略
 
@@ -335,16 +339,18 @@ npm run start
 | --- | --- |
 | 进程内 L1 | 番剧 30 分钟；豆瓣 3 小时；Steam 2 小时；TVMaze 1 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| ISR 页面 | 首页和日期页 6 小时；日期链接 `prefetch={false}`，避免浏览一次就预取 7 个日期页 |
+| 日聚合 | 每个日期缓存 24 小时；每天 Cron 只拉一次今天起 8 天 |
+| ISR 页面 | 首页和日期页 24 小时；日期链接 `prefetch={false}`，避免浏览一次就预取 7 个日期页 |
 | API CDN | `/api/schedule` `s-maxage=1800`；`/api/search` `s-maxage=900`；图片 1 年 |
 | 图片源站 | TVMaze / AniList / Steam 直连源站 CDN；只有豆瓣图片经过 Function |
 | 失败降级 | 过期 6 小时内的 L1 数据可在上游失败时继续返回 |
 
 ### Vercel 免费额度友好设计
 
-- **ISR 首页/日期页 6 小时**：相对最初的 5 分钟，页面回源频率下降 72 倍。
+- **日聚合 + 页面 ISR 都是 24 小时**：数据源每天最多聚合一次，页面每天最多刷新一次。
+- **每天 00:05 的单个 Cron**：预热今天起 8 天，不依赖访问触发。
 - **日期链接关闭 Next.js prefetch**：避免一次访问就后台生成多张 `/date/*` ISR 页面。
-- **移除 provider 级 `unstable_cache`**：不再为每个日期、每个数据源、每次搜索写 Data Cache，只保留页面 ISR 和 CDN。
+- **搜索不写 Data Cache**：只有页面/日聚合做持久缓存，搜索结果由 CDN 和内存缓存承接。
 - **图片直连源站**：TVMaze / AniList / Steam 封面不再经过 Function；只有豆瓣防盗链图片走代理。
 - **缩小封面尺寸**：TVMaze 用 `medium` 而不是 `original`，AniList 用 `large` 而不是 `extraLarge`，单张图从数百 KB 降到几十 KB。
 - 结果：Fast Origin Transfer 主要只剩页面回源，ISR Writes 只跟页面更新频率相关。
@@ -397,6 +403,14 @@ GET /api/search?q=空洞骑士
   "timezone": "Asia/Shanghai",
   "cache": { "isr": true, "memory": true, "upstash": false }
 }
+```
+
+### `GET /api/cron/daily`
+
+每天 00:05（北京时间）执行一次：拉取今天起 8 天的数据、写入 24h 日缓存，并刷新首页/日期页。配置 `CRON_SECRET` 时需要：
+
+```http
+Authorization: Bearer <CRON_SECRET>
 ```
 
 ### `GET /api/image?src=...`

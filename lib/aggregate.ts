@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { getAnimeForDay } from "@/lib/providers/anilist";
 import { getDoubanMovies, getDoubanSeries } from "@/lib/providers/douban";
 import { getSteamGames } from "@/lib/providers/steam";
@@ -231,9 +232,31 @@ async function loadDayData(dateKey: string): Promise<DayData> {
 }
 
 const DEGRADED_DAY = "DEGRADED_DAY";
+const DAY_CACHE_SECONDS = 86_400;
+
+async function loadDayDataForCache(dateKey: string): Promise<DayData> {
+  const data = await loadDayData(dateKey);
+  if (data.total === 0 && data.sources.some((source) => source.status === "error")) {
+    // Do not persist a transient empty day for 24 hours.
+    throw new Error(DEGRADED_DAY);
+  }
+  return data;
+}
+
+const getCachedDayData = unstable_cache(loadDayDataForCache, ["airdate-day-v4"], {
+  revalidate: DAY_CACHE_SECONDS,
+  tags: ["schedule"],
+});
 
 export async function getDayData(dateKey: string): Promise<DayData> {
-  return loadDayData(dateKey);
+  try {
+    return await getCachedDayData(dateKey);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes(DEGRADED_DAY)) {
+      return loadDayData(dateKey);
+    }
+    throw error;
+  }
 }
 
 export function emptyDayData(dateKey: string): DayData {

@@ -13,7 +13,7 @@ import {
   todayKey,
 } from "@/lib/date";
 
-export const revalidate = 21_600;
+export const revalidate = 86_400;
 export const dynamicParams = true;
 
 type DatePageProps = {
