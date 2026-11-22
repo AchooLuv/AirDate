@@ -31,6 +31,7 @@ export function WeekStrip({
 
       <Link
         href={datePath(previousWeek, today)}
+        prefetch={false}
         className="week-arrow"
         aria-label={`上一周，从 ${previousWeek} 开始`}
       >
@@ -42,6 +43,7 @@ export function WeekStrip({
           <Link
             key={day.key}
             href={datePath(day.key, today)}
+            prefetch={false}
             className={[
               "week-day",
               day.isSelected ? "is-selected" : "",
@@ -63,6 +65,7 @@ export function WeekStrip({
 
       <Link
         href={datePath(nextWeek, today)}
+        prefetch={false}
         className="week-arrow"
         aria-label={`下一周，从 ${nextWeek} 开始`}
       >
@@ -75,6 +78,7 @@ export function WeekStrip({
 
       <Link
         href={datePath(addDays(date, 7), today)}
+        prefetch={false}
         className="week-quick-next"
         aria-label="跳到一周后"
       >

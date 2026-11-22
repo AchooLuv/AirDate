@@ -8,7 +8,7 @@ type FetchOptions = RequestInit & {
   noStore?: boolean;
 };
 
-const REVALIDATE_SECONDS = 3_600;
+const REVALIDATE_SECONDS = 21_600;
 
 export class UpstreamError extends Error {
   status: number;

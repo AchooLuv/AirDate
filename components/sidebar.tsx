@@ -90,6 +90,7 @@ export function Sidebar({
       {next ? (
         <Link
           href={datePath(next.date, today)}
+          prefetch={false}
           className="rail-card next-card"
           style={
             {

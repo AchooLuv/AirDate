@@ -58,6 +58,7 @@ export function Hero({
           <div className="date-control">
             <Link
               href={datePath(previous, today)}
+              prefetch={false}
               className="date-arrow"
               aria-label={`查看 ${previous}`}
             >
@@ -70,6 +71,7 @@ export function Hero({
             </div>
             <Link
               href={datePath(next, today)}
+              prefetch={false}
               className="date-arrow"
               aria-label={`查看 ${next}`}
             >

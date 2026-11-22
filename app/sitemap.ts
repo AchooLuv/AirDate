@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/constants";
 import { addDays, todayKey } from "@/lib/date";
 
-export const revalidate = 21600;
+export const revalidate = 86_400;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const today = todayKey();

@@ -244,7 +244,11 @@ function EmptyState({
       </p>
 
       {nextItem ? (
-        <Link href={datePath(nextItem.date, today)} className="empty-next">
+        <Link
+          href={datePath(nextItem.date, today)}
+          prefetch={false}
+          className="empty-next"
+        >
           <span className="empty-next-date">{formatMonthDay(nextItem.date)}</span>
           <span className="empty-next-copy">
             <small>最近一场{meta ? meta.label : ""}</small>
