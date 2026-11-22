@@ -46,7 +46,7 @@
 ### 今日时间线与周日历
 
 - 默认显示**今天**（`Asia/Shanghai`，UTC+8），服务端渲染首屏，不依赖客户端二次请求。
-- 一周日期条支持切换周、回到今天、跳到 7 天后；日期会写入 URL，可直接分享：
+- 日期条固定显示今天前后 3 天；只能访问这 7 天，越界日期会跳回今天：
   - `/date/2026-10-24`
 - 时间线按 **全天 / 深夜 / 上午 / 下午 / 晚间** 分组，左侧时间轴显示北京时间。
 - 顶部展示今日总量、四个分类的数量和下一场预告。
@@ -153,10 +153,11 @@
 | 设计 | 做法 |
 | --- | --- |
 | SSR + ISR | `/` 与 `/date/[date]` 每天 revalidate；每天 00:05 通过 Cron 预热并刷新页面；首屏始终是服务端 HTML |
+| 访问窗口 | 只开放今天前后 3 天；`proxy.ts` 把越界日期 307 回首页，API 也返回 404 |
 | 反向代理 | `/api/schedule`、`/api/search`、`/api/image` 统一收口第三方请求，避免把密钥/UA/跨域问题暴露给浏览器 |
 | 聚合 | `lib/aggregate.ts` 统一成 `ReleaseItem`，做时区换算、去重、排序、分类计数和数据源状态 |
 | 缓存 | 整天聚合结果缓存 24 小时 + ISR 页面 24 小时 + API CDN 15–30 分钟；进程内 L1 和可选 Upstash |
-| 更新策略 | 每天 00:05 由 Cron 拉取一次今天起 8 天的数据并刷新页面；日期链接关闭 prefetch |
+| 更新策略 | 每天 00:05 由 Cron 拉取一次今天前后 3 天的数据并刷新页面；日期链接关闭 prefetch |
 | 图片 | 豆瓣需要 Referer，走代理并缓存 1 年；TVMaze / AniList / Steam 直接使用源站 CDN |
 | 搜索 | 各源并行搜索；按标题/别名相关性排序；中文番剧走本地索引 |
 
@@ -237,8 +238,9 @@ AirDate/
 │   └── search.ts                # 多源搜索 + 相关性 + 去重
 ├── data/anime-index.json        # 由 bangumi-data 生成的紧凑索引
 ├── scripts/sync-anime-index.mjs # 索引同步脚本
+├── proxy.ts                     # 今天 ±3 天访问窗口校验
 ├── docs/                        # README 截图
-├── vercel.json                  # Vercel 配置
+├── vercel.json                  # Vercel Cron 配置
 └── .env.example
 ```
 
@@ -339,7 +341,7 @@ npm run start
 | --- | --- |
 | 进程内 L1 | 番剧 30 分钟；豆瓣 3 小时；Steam 2 小时；TVMaze 1 小时 |
 | Upstash L2 | 与 L1 相同的 TTL，跨 Serverless 实例共享 |
-| 日聚合 | 每个日期缓存 24 小时；每天 Cron 只拉一次今天起 8 天 |
+| 日聚合 | 每个日期缓存 24 小时；每天 Cron 只拉一次今天前后 3 天（7 天） |
 | ISR 页面 | 首页和日期页 24 小时；日期链接 `prefetch={false}`，避免浏览一次就预取 7 个日期页 |
 | API CDN | `/api/schedule` `s-maxage=1800`；`/api/search` `s-maxage=900`；图片 1 年 |
 | 图片源站 | TVMaze / AniList / Steam 直连源站 CDN；只有豆瓣图片经过 Function |
@@ -348,7 +350,7 @@ npm run start
 ### Vercel 免费额度友好设计
 
 - **日聚合 + 页面 ISR 都是 24 小时**：数据源每天最多聚合一次，页面每天最多刷新一次。
-- **每天 00:05 的单个 Cron**：预热今天起 8 天，不依赖访问触发。
+- **每天 00:05 的单个 Cron**：预热今天前后 3 天，不依赖访问触发。
 - **日期链接关闭 Next.js prefetch**：避免一次访问就后台生成多张 `/date/*` ISR 页面。
 - **搜索不写 Data Cache**：只有页面/日聚合做持久缓存，搜索结果由 CDN 和内存缓存承接。
 - **图片直连源站**：TVMaze / AniList / Steam 封面不再经过 Function；只有豆瓣防盗链图片走代理。
@@ -407,7 +409,7 @@ GET /api/search?q=空洞骑士
 
 ### `GET /api/cron/daily`
 
-每天 00:05（北京时间）执行一次：拉取今天起 8 天的数据、写入 24h 日缓存，并刷新首页/日期页。配置 `CRON_SECRET` 时需要：
+每天 00:05（北京时间）执行一次：拉取今天前后 3 天的数据、写入 24h 日缓存，并刷新首页/日期页。配置 `CRON_SECRET` 时需要：
 
 ```http
 Authorization: Bearer <CRON_SECRET>
@@ -426,7 +428,7 @@ AirDate 的 SEO 不是只靠 README：
 - 服务端渲染，日期和内容直接出现在首屏 HTML。
 - 动态 `generateMetadata`：切换日期时 title / description / canonical 跟随变化。
 - `WebSite` JSON-LD + `SearchAction`。
-- `robots.txt`、`sitemap.xml`（首页 + 未来 14 天日期页）。
+- `robots.txt`、`sitemap.xml`（首页 + 未来 3 天日期页）。
 - `opengraph-image`（1200×630）与 `twitter:card`。
 - 语义化中文标题、aria 标签、可分享 URL。
 

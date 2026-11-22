@@ -11,6 +11,7 @@ import { PosterStack } from "@/components/poster-stack";
 import { CATEGORY_META, CATEGORY_ORDER } from "@/lib/categories";
 import {
   addDays,
+  DATE_WINDOW_RADIUS,
   formatMonthCN,
   formatDateCN,
   datePath,
@@ -33,6 +34,8 @@ export function Hero({
   const isToday = date === today;
   const previous = addDays(date, -1);
   const next = addDays(date, 1);
+  const canGoPrevious = previous >= addDays(today, -DATE_WINDOW_RADIUS);
+  const canGoNext = next <= addDays(today, DATE_WINDOW_RADIUS);
 
   return (
     <section className="hero">
@@ -56,27 +59,39 @@ export function Hero({
 
         <div className="hero-date-row">
           <div className="date-control">
-            <Link
-              href={datePath(previous, today)}
-              prefetch={false}
-              className="date-arrow"
-              aria-label={`查看 ${previous}`}
-            >
-              <ChevronLeft size={16} />
-            </Link>
+            {canGoPrevious ? (
+              <Link
+                href={datePath(previous, today)}
+                prefetch={false}
+                className="date-arrow"
+                aria-label={`查看 ${previous}`}
+              >
+                <ChevronLeft size={16} />
+              </Link>
+            ) : (
+              <span className="date-arrow is-disabled" aria-disabled="true">
+                <ChevronLeft size={16} />
+              </span>
+            )}
             <div className="date-current">
               <CalendarDays size={15} aria-hidden="true" />
               <span className="date-main">{formatDateCN(date)}</span>
               <span className="date-weekday">{weekdayCN(date)}</span>
             </div>
-            <Link
-              href={datePath(next, today)}
-              prefetch={false}
-              className="date-arrow"
-              aria-label={`查看 ${next}`}
-            >
-              <ChevronRight size={16} />
-            </Link>
+            {canGoNext ? (
+              <Link
+                href={datePath(next, today)}
+                prefetch={false}
+                className="date-arrow"
+                aria-label={`查看 ${next}`}
+              >
+                <ChevronRight size={16} />
+              </Link>
+            ) : (
+              <span className="date-arrow is-disabled" aria-disabled="true">
+                <ChevronRight size={16} />
+              </span>
+            )}
           </div>
 
           {!isToday ? (

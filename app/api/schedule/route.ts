@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDayData } from "@/lib/aggregate";
-import { normalizeDateKey, todayKey } from "@/lib/date";
+import {
+  isDateInWindow,
+  normalizeDateKey,
+  todayKey,
+} from "@/lib/date";
 import type { Category } from "@/lib/types";
 import { CATEGORIES } from "@/lib/types";
 
@@ -10,7 +14,15 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const requested = request.nextUrl.searchParams.get("date");
   const date = normalizeDateKey(requested) ?? todayKey();
+  const today = todayKey();
   const category = request.nextUrl.searchParams.get("category");
+
+  if (!isDateInWindow(date, today)) {
+    return NextResponse.json(
+      { error: "只能查看今天前后 3 天的日历。" },
+      { status: 404, headers: { "Cache-Control": "no-store" } },
+    );
+  }
 
   try {
     const data = await getDayData(date);

@@ -459,6 +459,11 @@ button {
   background: rgba(255, 255, 255, 0.07);
 }
 
+.date-arrow.is-disabled {
+  opacity: 0.28;
+  pointer-events: none;
+}
+
 .date-current {
   display: flex;
   align-items: center;

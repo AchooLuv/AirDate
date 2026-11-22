@@ -6,7 +6,7 @@ export const revalidate = 86_400;
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const today = todayKey();
-  const dates = Array.from({ length: 15 }, (_, index) => addDays(today, index - 1));
+  const dates = Array.from({ length: 4 }, (_, index) => addDays(today, index));
 
   return [
     {

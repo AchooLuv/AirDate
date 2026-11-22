@@ -1,7 +1,11 @@
 import { SiteShell } from "@/components/site-shell";
 import { getDayData } from "@/lib/aggregate";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
-import { getWeekDays, todayKey } from "@/lib/date";
+import {
+  addDays,
+  getWindowDays,
+  todayKey,
+} from "@/lib/date";
 import type { ReleaseItem } from "@/lib/types";
 
 function pickFeatured(items: ReleaseItem[], upcoming: ReleaseItem[]): ReleaseItem[] {
@@ -32,8 +36,11 @@ function pickFeatured(items: ReleaseItem[], upcoming: ReleaseItem[]): ReleaseIte
 export async function HomeContent({ date }: { date: string }) {
   const today = todayKey();
   const data = await getDayData(date);
-  const week = getWeekDays(date, today);
-  const featured = pickFeatured(data.items, data.upcoming);
+  const week = getWindowDays(date, today);
+  const upcoming = data.upcoming.filter(
+    (item) => item.date <= addDays(today, 3),
+  );
+  const featured = pickFeatured(data.items, upcoming);
 
   const websiteJsonLd = {
     "@context": "https://schema.org",
@@ -56,7 +63,7 @@ export async function HomeContent({ date }: { date: string }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
       <SiteShell
-        data={data}
+        data={{ ...data, upcoming }}
         date={date}
         today={today}
         week={week}

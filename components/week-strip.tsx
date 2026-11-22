@@ -1,10 +1,7 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
-  addDays,
   datePath,
   formatMonthCN,
-  shiftWeek,
   type WeekDay,
 } from "@/lib/date";
 
@@ -17,26 +14,15 @@ export function WeekStrip({
   date: string;
   today: string;
 }) {
-  const monthLabel = formatMonthCN(date);
-  const previousWeek = shiftWeek(date, -1);
-  const nextWeek = shiftWeek(date, 1);
+  const monthLabel = formatMonthCN(today);
 
   return (
     <div className="week-shell">
       <div className="week-meta">
-        <span className="mono-label">WEEK VIEW</span>
+        <span className="mono-label">RANGE VIEW</span>
         <strong>{monthLabel}</strong>
-        <span>北京时间</span>
+        <span>前后 3 天</span>
       </div>
-
-      <Link
-        href={datePath(previousWeek, today)}
-        prefetch={false}
-        className="week-arrow"
-        aria-label={`上一周，从 ${previousWeek} 开始`}
-      >
-        <ChevronLeft size={17} />
-      </Link>
 
       <div className="week-days">
         {week.map((day) => (
@@ -63,26 +49,8 @@ export function WeekStrip({
         ))}
       </div>
 
-      <Link
-        href={datePath(nextWeek, today)}
-        prefetch={false}
-        className="week-arrow"
-        aria-label={`下一周，从 ${nextWeek} 开始`}
-      >
-        <ChevronRight size={17} />
-      </Link>
-
       <Link href="/" className="week-today">
         今天
-      </Link>
-
-      <Link
-        href={datePath(addDays(date, 7), today)}
-        prefetch={false}
-        className="week-quick-next"
-        aria-label="跳到一周后"
-      >
-        +7D
       </Link>
     </div>
   );

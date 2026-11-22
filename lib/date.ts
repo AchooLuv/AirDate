@@ -140,26 +140,35 @@ export type WeekDay = {
   isPast: boolean;
 };
 
-export function getWeekDays(selectedKey: string, nowKey: string): WeekDay[] {
-  const index = weekdayIndex(selectedKey);
-  const mondayOffset = index === 0 ? -6 : 1 - index;
-  return Array.from({ length: 7 }, (_, i) => {
-    const key = addDays(selectedKey, mondayOffset + i);
+export const DATE_WINDOW_RADIUS = 3;
+
+export function isDateInWindow(
+  key: string,
+  today: string,
+  radius = DATE_WINDOW_RADIUS,
+): boolean {
+  const diff = daysBetween(today, key);
+  return diff >= -radius && diff <= radius;
+}
+
+export function getWindowDays(
+  selectedKey: string,
+  today: string,
+  radius = DATE_WINDOW_RADIUS,
+): WeekDay[] {
+  return Array.from({ length: radius * 2 + 1 }, (_, i) => {
+    const key = addDays(today, i - radius);
     const [, month, day] = key.split("-").map(Number);
     return {
       key,
       day,
       month,
       weekday: weekdayShortCN(key),
-      isToday: key === nowKey,
+      isToday: key === today,
       isSelected: key === selectedKey,
-      isPast: key < nowKey,
+      isPast: key < today,
     };
   });
-}
-
-export function shiftWeek(key: string, direction: -1 | 1): string {
-  return addDays(key, direction * 7);
 }
 
 /** Today lives at `/`; every other date has a stable, cacheable path. */

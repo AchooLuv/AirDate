@@ -9,6 +9,7 @@ import {
 import {
   formatDateForMeta,
   formatMonthCN,
+  isDateInWindow,
   normalizeDateKey,
   todayKey,
 } from "@/lib/date";
@@ -29,21 +30,23 @@ export async function generateMetadata({
 }: DatePageProps): Promise<Metadata> {
   const { date: rawDate } = await params;
   const date = normalizeDateKey(rawDate);
-  if (!date) {
+  const today = todayKey();
+  if (!date || !isDateInWindow(date, today)) {
     return {
       title: `${SITE_NAME} · ${SITE_TAGLINE}`,
       description: SITE_DESCRIPTION,
       alternates: { canonical: "/" },
+      robots: { index: false, follow: false },
     };
   }
 
   const title = `${formatMonthCN(date)} · ${formatDateForMeta(date)} 放送 / 上映 / 发售日历`;
-  const isToday = date === todayKey();
+  const isToday = date === today;
   return {
     title,
     description: `${formatDateForMeta(date)}的电影上映、剧集更新、番剧放送与游戏发售时间线。${SITE_DESCRIPTION}`,
     alternates: { canonical: isToday ? "/" : `/date/${date}` },
-    ...(isToday ? { robots: { index: false, follow: true } } : {}),
+    ...(isToday || date < today ? { robots: { index: false, follow: true } } : {}),
     openGraph: {
       title: `${title} · ${SITE_NAME}`,
       description: SITE_DESCRIPTION,
@@ -55,7 +58,8 @@ export async function generateMetadata({
 export default async function DatePage({ params }: DatePageProps) {
   const { date: rawDate } = await params;
   const date = normalizeDateKey(rawDate);
-  if (!date) notFound();
+  const today = todayKey();
+  if (!date || !isDateInWindow(date, today)) notFound();
 
   return <HomeContent date={date} />;
 }

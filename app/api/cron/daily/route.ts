@@ -23,12 +23,14 @@ export async function GET(request: NextRequest) {
   }
 
   const today = todayKey();
-  const dates = Array.from({ length: 8 }, (_, index) => addDays(today, index));
+  const dates = Array.from({ length: 7 }, (_, index) =>
+    addDays(today, index - 3),
+  );
   const results = await Promise.allSettled(dates.map((date) => getDayData(date)));
 
   revalidatePath("/");
-  for (const date of dates.slice(1)) {
-    revalidatePath(`/date/${date}`);
+  for (const date of dates) {
+    if (date !== today) revalidatePath(`/date/${date}`);
   }
 
   return NextResponse.json(
