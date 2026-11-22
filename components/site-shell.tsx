@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Hero } from "@/components/hero";
 import { ScheduleExplorer } from "@/components/schedule-explorer";
 import { SearchDialog } from "@/components/search-dialog";
@@ -25,8 +26,21 @@ export function SiteShell({
   featured: ReleaseItem[];
 }) {
   const [searchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
   const openSearch = useCallback(() => setSearchOpen(true), []);
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  useEffect(() => {
+    if (!pathname.startsWith("/date/")) return;
+
+    // A shorter date page can leave the browser at its old bottom position,
+    // which makes the viewport land on "即将到来". Start date navigation at
+    // the top; keep normal back/forward restoration for the home page.
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname]);
 
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
